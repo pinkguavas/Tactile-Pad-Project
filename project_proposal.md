@@ -72,12 +72,24 @@ The overall architecture emphasizes modularity, scalability, and energy efficien
 
 ## 5. Methodology
 Explain how the project will be developed:
-1. Requirement analysis  
-2. Hardware setup  
-3. Software development  
-4. Integration and testing  
-5. Deployment  
+1. Requirement analysis
+We begin by identifying the core technical risks and functional requirements of the system. Based on the research, the primary challenge lies in reliable pin actuation and holding mechanisms. Therefore, mechanical feasibility is prioritized before software complexity. The system must support stable vertical movement and repeatability.
+2. Hardware setup
+The hardware development process will proceed incrementally:
+- Single Pin Prototype: Design and test a single tactile pin module with a mechanical actuation and holding mechanism.
+- Row-Scanning Mechanism: Implement a scanning architecture to efficiently control multiple pins with minimal actuators.
+- Small-Scale Grid Integration (e.g., 8×8): Assemble multiple pin modules into a compact tactile grid.
+- Driver Circuit & Power Protection: Design and test driver circuits including flyback diode protection for inductive loads.
+3. Software development
 
+4. Integration and testing
+Mechanical, electrical, and software components will be integrated into a unified system. Testing will evaluate:
+- Stability of pin movement
+- Repeatability of actuation
+- Signal timing accuracy
+- System power consumption
+5. Deployment
+A functional prototype capable of real-time text-to-tactile conversion will be demonstrated. The system architecture will allow future expansion toward graphical and map-based representations. 
 
 ## 6. Timeline
 As detail as possible.
@@ -94,10 +106,16 @@ As detail as possible.
 - Measurable performance metrics
 - User or system benefits
 
+- A functional 8×8 refreshable tactile grid
+- Stable and repeatable pin actuation mechanism
+- Real-time text-to-tactile conversion
+- Modular architecture enabling scalability
+- Verified electrical safety and controlled power usage
 
 ## 8. Conclusion
 Summarize the project’s value and feasibility.
 
+This project presents a structured approach to developing a refreshable tactile display. By prioritizing mechanical feasibility and incremental integration, the system reduces technical uncertainty while maintaining scalability. The proposed modular architecture ensures that the prototype can serve as a foundation for future expansion into more advanced tactile visualization systems.
 
 ## References
 - Datasheets
