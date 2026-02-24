@@ -27,7 +27,6 @@ The expected outcome is a functional small-scale tactile grid (e.g., 8×8) capab
 
 ## 3. Objectives
 The main objectives of this project are:
-- List the specific goals of the project
 
 - Design and prototype a single functional tactile pin module
 - Develop a reliable actuation and holding mechanism for stable pin movement
@@ -105,7 +104,7 @@ As detail as possible.
 - Functional prototype
 - Measurable performance metrics
 - User or system benefits
-
+--------------
 - A functional 8×8 refreshable tactile grid
 - Stable and repeatable pin actuation mechanism
 - Real-time text-to-tactile conversion
