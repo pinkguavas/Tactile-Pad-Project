@@ -66,8 +66,11 @@ The hardware development process will proceed incrementally:
 - Driver Circuit & Power Protection: Design and test driver circuits including flyback diode protection for inductive loads.
 3. Software development
 - Firmware for pico
+  - Micropython
 - User interface and application logic
-- Communication protocols between application and pico
+  - Will create a React App that can translate a text input to braille
+  - python script that transforms the braille into something for the pico to the pins
+  - We may use IC2 protocols if we create the PCB
 4. Integration and testing
 Mechanical, electrical, and software components will be integrated into a unified system. Testing will evaluate:
 - Stability of pin movement
