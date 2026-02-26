@@ -104,3 +104,7 @@ This project presents a structured approach to developing a refreshable tactile 
 - Prior Works:
   - [Electromechanical Refreshable Braille Module](https://hackaday.io/project/191181-electromechanical-refreshable-braille-module)
   - [Dot Pad X](https://www.dotincorp.com/en/product/dotpadx)
+  - [Haptic Edge Display for Mobile Tactile Interaction](https://dl.acm.org/doi/abs/10.1145/2858036.2858264)
+  - [ShapeClip](https://dl.acm.org/doi/10.1145/2702123.2702599)
+  - [Tilt displays](https://dl.acm.org/doi/10.1145/2371574.2371600)
+  - [MagTics](https://dl.acm.org/doi/10.1145/3126594.3126609)
