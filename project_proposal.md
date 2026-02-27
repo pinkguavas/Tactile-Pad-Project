@@ -2,7 +2,7 @@
 
 
 ## 1. Team Information
-- **Team Name:** N/A
+- **Team Name:** Techtile
 - **Team Members:**
   - Neha Kalakuntla (nehakalakuntla@brandeis.edu)
   - Aimuan Erhabor (aimuanerhabor@brandeis.edu)
@@ -49,16 +49,20 @@ The overall architecture emphasizes modularity, scalability, and energy efficien
 | Driver Board | Directs Power | 1 |
 | Electromagnets | Braille Dot Actuation | X |
 
+-Schematic:
+
+
 ### 4.3 Software Components
-- Libraries / Frameworks
-- Communication Protocols
-- Firmware
-- User interface
+- Libraries / Frameworks: Braille Translation([Touch Map](https://pypi.org/project/touchmap/)), Image Converter
+- Communication Protocol: TCP
+- Firmware: Micropython
+- User interface: Frontend(tbd), Backend(tbd), Database(tbd)
 
 
 ## 5. Methodology
 1. Requirement analysis
 We begin by identifying the core technical risks and functional requirements of the system. Based on the research, the primary challenge lies in reliable pin actuation and holding mechanisms. Therefore, mechanical feasibility is prioritized before software complexity. The system must support stable vertical movement and repeatability.
+
 2. Hardware setup
 The hardware development process will proceed incrementally:
 - Single Pin Prototype: Design and test a single tactile pin module with a mechanical actuation and holding mechanism.
@@ -98,9 +102,20 @@ A functional prototype of a digital tactile pad will be demonstrated. The system
 This project presents a structured approach to developing a refreshable tactile display. By prioritizing mechanical feasibility and incremental integration, the system reduces technical uncertainty while maintaining scalability. The proposed modular architecture ensures that the prototype can serve as a foundation for future expansion into more advanced tactile visualization systems.
 
 
+## 9. Workload Distribution
+Subject to change depending on progress
+
+
+
 ## References
+- Our inspiration: [Electromechanical Refreshable Braille Module](https://hackaday.io/project/191181-electromechanical-refreshable-braille-module)
 - Research papers
   - [MagnePins](https://dl.acm.org/doi/10.1145/3746059.3747692)
-- Prior Works:
-  - [Electromechanical Refreshable Braille Module](https://hackaday.io/project/191181-electromechanical-refreshable-braille-module)
+  - [Shape Clip](https://dl.acm.org/doi/10.1145/2702123.2702599)
+  - [Haptic Edge Display for Mobile Tactile Interaction](https://dl.acm.org/doi/abs/10.1145/2858036.2858264)
+  - [Tilt Displays](https://dl.acm.org/doi/10.1145/2371574.2371600)
+  - [MagTics](https://dl.acm.org/doi/10.1145/3126594.3126609)
+- On the market:
   - [Dot Pad X](https://www.dotincorp.com/en/product/dotpadx)
+  - [Monarch](https://www.aph.org/product/monarch/)
+  - [Braille Pad En](https://www.4blind.com/braillepad-en)
