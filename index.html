@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Braille Board Controller</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Braille Tactile Board</h1>
+
+        <input id="textInput" type="text" placeholder="Enter text here">
+        <div class="buttons">
+            <button onclick="sendText()">Display</button>
+            <button onclick="resetBoard()">Reset</button>
+            <button onclick="clearBoard()">Clear</button>
+        </div>
+
+        <h2>Preview</h2>
+        <div id="preview"></div>
+
+        <h2>Status</h2>
+        <div id="status">Idle</div>
+    </div>
+
+    <script>
+        async function sendText() {
+            const text = document.getElementById("textInput").value;
+
+            const response = await fetch("/display", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("status").innerText = "Displayed successfully";
+
+            let previewHtml = "";
+            data.patterns.forEach(item => {
+                previewHtml += `<p><strong>${item.char}</strong>: ${item.pattern}</p>`;
+            });
+
+            document.getElementById("preview").innerHTML = previewHtml;
+        }
+
+        async function resetBoard() {
+            await fetch("/reset", { method: "POST" });
+            document.getElementById("status").innerText = "Board reset";
+        }
+
+        async function clearBoard() {
+            await fetch("/clear", { method: "POST" });
+            document.getElementById("status").innerText = "Board cleared";
+            document.getElementById("preview").innerHTML = "";
+            document.getElementById("textInput").value = "";
+        }
+    </script>
+</body>
+</html>

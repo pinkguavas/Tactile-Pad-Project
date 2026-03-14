@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 40px;
+    background: #f5f5f5;
+}
+
+.container {
+    max-width: 700px;
+    margin: auto;
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+button {
+    padding: 10px 16px;
+    margin-right: 8px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#preview, #status {
+    background: #f0f0f0;
+    padding: 12px;
+    border-radius: 8px;
+    min-height: 40px;
+}
