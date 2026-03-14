@@ -149,7 +149,7 @@ Subject to change depending on progress
 
 - Neha Kalakuntla - Software & Hardware
 - Aimuan Erhabor - Hardware Prototyping
-- Jojo Day - Software & Firmware 
+- Jojo Day - Software & Embedded Software 
 - Elise Keller - Hardware Prototyping
 - Jiayi Zhang - Software
 
