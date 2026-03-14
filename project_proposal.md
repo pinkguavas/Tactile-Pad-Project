@@ -52,7 +52,7 @@ The software layer converts user text input into a dot-matrix representation com
 | Circuit Driver Board | Directs power | 1 |
 | Electromagnets | Pin actuation | per pin|
 | PCB | Modulation for each braille letter | per pin |
-| Micromagnets | For magnetic actuation | per pin  |
+| Micromagnets | For magnetic actuation | per letter  |
 |Solenoids | Pin actuation | per pin |
 | Diode | Voltage Control | X |
 | Transistor | Power Switch | X |
