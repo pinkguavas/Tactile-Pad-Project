@@ -1,59 +1,282 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Braille Board Controller</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>Braille Tactile Board</h1>
+    <main class="app-shell">
+        <section class="panel">
+            <header class="panel-header">
+                <div class="header-left">
+                    <p class="eyebrow">Braille Tactile Board</p>
+                    <h1>TechTile</h1>
+                    <p class="subtitle">
+                        Send text to the board, preview translated Braille cells, and manage device state.
+                    </p>
+                </div>
 
-        <input id="textInput" type="text" placeholder="Enter text here">
-        <div class="buttons">
-            <button onclick="sendText()">Display</button>
-            <button onclick="resetBoard()">Reset</button>
-            <button onclick="clearBoard()">Clear</button>
-        </div>
+                <div class="header-right">
+                    <div class="status-pill pill-idle" id="statusPill">Idle</div>
+                    <div class="status-inline status-idle" id="statusInline">
+                        System is idle and ready.
+                    </div>
+                </div>
+            </header>
 
-        <h2>Preview</h2>
-        <div id="preview"></div>
+            <section class="control-group">
+                <label for="textInput" class="input-label">Text Input</label>
+                <div class="input-row">
+                    <input
+                        id="textInput"
+                        type="text"
+                        placeholder="Enter text to display on the tactile board"
+                        maxlength="120"
+                    />
+                </div>
+                <p class="helper-text">
+                    Supports letters, numbers, punctuation, capital indicators, and number indicators.
+                </p>
+            </section>
 
-        <h2>Status</h2>
-        <div id="status">Idle</div>
-    </div>
+            <section class="action-group">
+                <button class="btn btn-primary" onclick="sendText()">Display</button>
+                <button class="btn btn-secondary" onclick="resetBoard()">Reset</button>
+                <button class="btn btn-ghost" onclick="clearBoard()">Clear</button>
+            </section>
+
+            <section class="preview-section">
+                <div class="card">
+                    <div class="card-header preview-header">
+                        <div class="preview-title-group">
+                            <h2>Preview</h2>
+                            <span class="card-meta" id="previewCount">0 items</span>
+                        </div>
+
+                        <div class="preview-toggle" role="tablist" aria-label="Preview mode">
+                            <button
+                                type="button"
+                                class="toggle-btn active"
+                                id="detailModeBtn"
+                                onclick="setPreviewMode('detail')"
+                            >
+                                Detailed
+                            </button>
+                            <button
+                                type="button"
+                                class="toggle-btn"
+                                id="lineModeBtn"
+                                onclick="setPreviewMode('line')"
+                            >
+                                Line View
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="preview" class="preview-empty">
+                        No preview generated yet.
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
 
     <script>
+        const statusPillEl = document.getElementById("statusPill");
+        const statusInlineEl = document.getElementById("statusInline");
+        const previewEl = document.getElementById("preview");
+        const previewCountEl = document.getElementById("previewCount");
+        const textInputEl = document.getElementById("textInput");
+        const detailModeBtn = document.getElementById("detailModeBtn");
+        const lineModeBtn = document.getElementById("lineModeBtn");
+
+        let previewMode = "detail";
+        let latestPatterns = [];
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function setStatus(message, type = "idle") {
+            statusPillEl.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+            statusPillEl.className = `status-pill pill-${type}`;
+
+            statusInlineEl.textContent = message;
+            statusInlineEl.className = `status-inline status-${type}`;
+        }
+
+        function setPreviewMode(mode) {
+            previewMode = mode;
+
+            detailModeBtn.classList.toggle("active", mode === "detail");
+            lineModeBtn.classList.toggle("active", mode === "line");
+
+            renderPreview(latestPatterns);
+        }
+
+        function renderBrailleCell(pattern, extraClass = "") {
+            const safePattern = String(pattern || "000000").padEnd(6, "0").slice(0, 6);
+            const dots = safePattern.split("");
+
+            return `
+                <div class="braille-cell ${extraClass}" aria-label="Braille pattern ${safePattern}">
+                    ${dots.map((bit, index) => `
+                        <span
+                            class="dot ${bit === "1" ? "raised" : ""}"
+                            data-dot="${index + 1}"
+                            aria-hidden="true"
+                        ></span>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function renderDetailPreview(patterns) {
+            return `
+                <div class="preview-list">
+                    ${patterns.map(item => {
+                        const char = escapeHtml(item.char ?? "");
+                        const pattern = escapeHtml(item.pattern ?? "000000");
+                        const type = escapeHtml(item.type ?? "unknown");
+                        const meaning = item.meaning ? escapeHtml(item.meaning) : "";
+
+                        return `
+                            <div class="preview-item">
+                                <div class="preview-main">
+                                    ${renderBrailleCell(item.pattern)}
+
+                                    <div class="preview-text">
+                                        <div class="preview-char">${char === " " ? "&nbsp;" : char}</div>
+
+                                        <div class="preview-meta">
+                                            <span class="preview-badge">${type}</span>
+                                            ${meaning ? `<span class="preview-meaning">• ${meaning}</span>` : ""}
+                                        </div>
+
+                                        <div class="preview-pattern">${pattern}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+        }
+
+        function renderLinePreview(patterns) {
+            return `
+                <div class="braille-line-preview">
+                    ${patterns.map(item => {
+                        return `
+                            <div class="braille-line-item">
+                                ${renderBrailleCell(item.pattern, "braille-cell-line")}
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+        }
+
+        function renderPreview(patterns = []) {
+            latestPatterns = Array.isArray(patterns) ? patterns : [];
+
+            if (!latestPatterns.length) {
+                previewEl.className = "preview-empty";
+                previewEl.innerHTML = "No preview generated yet.";
+                previewCountEl.textContent = "0 items";
+                return;
+            }
+
+            previewEl.className = "preview-content";
+            previewCountEl.textContent = `${latestPatterns.length} item${latestPatterns.length === 1 ? "" : "s"}`;
+
+            if (previewMode === "line") {
+                previewEl.innerHTML = renderLinePreview(latestPatterns);
+            } else {
+                previewEl.innerHTML = renderDetailPreview(latestPatterns);
+            }
+        }
+
         async function sendText() {
-            const text = document.getElementById("textInput").value;
+            const text = textInputEl.value.trim();
 
-            const response = await fetch("/display", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: text })
-            });
+            if (!text) {
+                setStatus("Please enter text before displaying.", "warning");
+                renderPreview([]);
+                return;
+            }
 
-            const data = await response.json();
+            try {
+                setStatus("Sending text to board...", "loading");
 
-            document.getElementById("status").innerText = "Displayed successfully";
+                const response = await fetch("/display", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
 
-            let previewHtml = "";
-            data.patterns.forEach(item => {
-                previewHtml += `<p><strong>${item.char}</strong>: ${item.pattern}</p>`;
-            });
+                if (!response.ok) {
+                    throw new Error(`Display request failed with status ${response.status}`);
+                }
 
-            document.getElementById("preview").innerHTML = previewHtml;
+                const data = await response.json();
+                const patterns = Array.isArray(data.patterns) ? data.patterns : [];
+
+                renderPreview(patterns);
+                setStatus("Text displayed successfully.", "success");
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to display text on the board.", "error");
+            }
         }
 
         async function resetBoard() {
-            await fetch("/reset", { method: "POST" });
-            document.getElementById("status").innerText = "Board reset";
+            try {
+                setStatus("Resetting board...", "loading");
+
+                const response = await fetch("/reset", {
+                    method: "POST"
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Reset request failed with status ${response.status}`);
+                }
+
+                textInputEl.value = "";
+                renderPreview([]);
+                setStatus("Board reset successfully.", "success");
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to reset the board.", "error");
+            }
         }
 
         async function clearBoard() {
-            await fetch("/clear", { method: "POST" });
-            document.getElementById("status").innerText = "Board cleared";
-            document.getElementById("preview").innerHTML = "";
-            document.getElementById("textInput").value = "";
+            try {
+                setStatus("Clearing board...", "loading");
+
+                const response = await fetch("/clear", {
+                    method: "POST"
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Clear request failed with status ${response.status}`);
+                }
+
+                textInputEl.value = "";
+                renderPreview([]);
+                setStatus("Board cleared successfully.", "success");
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to clear the board.", "error");
+            }
         }
     </script>
 </body>
