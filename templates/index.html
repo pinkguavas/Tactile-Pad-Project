@@ -14,7 +14,7 @@
                     <p class="eyebrow">Braille Tactile Board</p>
                     <h1>TechTile</h1>
                     <p class="subtitle">
-                        Send text to the board, preview translated Braille cells, and manage device state.
+                        Send text to the board, preview translated Braille cells, and simulate larger tactile board layouts.
                     </p>
                 </div>
 
@@ -26,57 +26,272 @@
                 </div>
             </header>
 
-            <section class="control-group">
-                <label for="textInput" class="input-label">Text Input</label>
-                <div class="input-row">
-                    <input
-                        id="textInput"
-                        type="text"
-                        placeholder="Enter text to display on the tactile board"
-                        maxlength="120"
-                    />
-                </div>
-                <p class="helper-text">
-                    Supports letters, numbers, punctuation, capital indicators, and number indicators.
-                </p>
+            <section class="tab-bar" role="tablist" aria-label="Application views">
+                <button
+                    type="button"
+                    class="app-tab active"
+                    id="mainTabBtn"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="mainTabPanel"
+                    onclick="setAppTab('main')"
+                >
+                    Main Controller
+                </button>
+                <button
+                    type="button"
+                    class="app-tab"
+                    id="simulationTabBtn"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="simulationTabPanel"
+                    onclick="setAppTab('simulation')"
+                >
+                    Large Board Simulation
+                </button>
             </section>
 
-            <section class="action-group">
-                <button class="btn btn-primary" onclick="sendText()">Display</button>
-                <button class="btn btn-secondary" onclick="resetBoard()">Reset</button>
-                <button class="btn btn-ghost" onclick="clearBoard()">Clear</button>
-            </section>
+            <section
+                id="mainTabPanel"
+                class="tab-panel active"
+                role="tabpanel"
+                aria-labelledby="mainTabBtn"
+            >
+                <section class="control-group">
+                    <label for="textInput" class="input-label">Text Input</label>
+                    <div class="input-row">
+                        <input
+                            id="textInput"
+                            type="text"
+                            placeholder="Enter text to display on the tactile board"
+                            maxlength="120"
+                        />
+                    </div>
+                    <p class="helper-text">
+                        Supports letters, numbers, punctuation, capital indicators, and number indicators.
+                    </p>
+                </section>
 
-            <section class="preview-section">
-                <div class="card">
-                    <div class="card-header preview-header">
-                        <div class="preview-title-group">
-                            <h2>Preview</h2>
-                            <span class="card-meta" id="previewCount">0 items</span>
+                <section class="action-group">
+                    <button class="btn btn-primary" onclick="sendText()">Display</button>
+                    <button class="btn btn-secondary" onclick="resetBoard()">Reset</button>
+                    <button class="btn btn-ghost" onclick="clearBoard()">Clear</button>
+                </section>
+
+                <section class="preview-section">
+                    <div class="card">
+                        <div class="card-header preview-header">
+                            <div class="preview-title-group">
+                                <h2>Preview</h2>
+                                <span class="card-meta" id="previewCount">0 items</span>
+                            </div>
+
+                            <div class="preview-toggle" role="tablist" aria-label="Preview mode">
+                                <button
+                                    type="button"
+                                    class="toggle-btn active"
+                                    id="detailModeBtn"
+                                    onclick="setPreviewMode('detail')"
+                                >
+                                    Detailed
+                                </button>
+                                <button
+                                    type="button"
+                                    class="toggle-btn"
+                                    id="lineModeBtn"
+                                    onclick="setPreviewMode('line')"
+                                >
+                                    Line View
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="preview-toggle" role="tablist" aria-label="Preview mode">
-                            <button
-                                type="button"
-                                class="toggle-btn active"
-                                id="detailModeBtn"
-                                onclick="setPreviewMode('detail')"
-                            >
-                                Detailed
-                            </button>
-                            <button
-                                type="button"
-                                class="toggle-btn"
-                                id="lineModeBtn"
-                                onclick="setPreviewMode('line')"
-                            >
-                                Line View
-                            </button>
+                        <div id="preview" class="preview-empty">
+                            No preview generated yet.
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section
+                id="simulationTabPanel"
+                class="tab-panel"
+                role="tabpanel"
+                aria-labelledby="simulationTabBtn"
+                hidden
+            >
+                <div class="simulation-layout">
+                    <div class="simulation-controls">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>Input Mode</h2>
+                                <span class="card-meta" id="simulationInputModeMeta">Text Mode</span>
+                            </div>
+
+                            <section class="control-group">
+                                <label class="input-label">Choose Input Type</label>
+                                <div class="segmented-control" role="tablist" aria-label="Simulation input type">
+                                    <button
+                                        type="button"
+                                        class="segment-btn active"
+                                        id="simulationTextModeBtn"
+                                        onclick="setSimulationInputMode('text')"
+                                    >
+                                        Text
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="segment-btn"
+                                        id="simulationJpgModeBtn"
+                                        onclick="setSimulationInputMode('jpg')"
+                                    >
+                                        Image
+                                    </button>
+                                </div>
+                            </section>
+
+                            <p class="helper-text" id="modeDescription">
+                                Text mode uses board size as rows × characters per line. Each character is shown as a grouped 2 × 3 Braille cell.
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>Board Size</h2>
+                                <span class="card-meta" id="simulationBoardSizeMeta">3 rows × 8 chars</span>
+                            </div>
+
+                            <div class="board-size-grid">
+                                <section class="control-group compact-control-group">
+                                    <label for="boardRowsInput" class="input-label" id="boardRowsLabel">Rows</label>
+                                    <div class="input-row size-input-row">
+                                        <input
+                                            id="boardRowsInput"
+                                            class="small-number-input"
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            step="1"
+                                            value="3"
+                                            placeholder="Rows"
+                                        />
+                                    </div>
+                                </section>
+
+                                <section class="control-group compact-control-group">
+                                    <label for="boardColsInput" class="input-label" id="boardColsLabel">Characters Per Line</label>
+                                    <div class="input-row size-input-row">
+                                        <input
+                                            id="boardColsInput"
+                                            class="small-number-input"
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            step="1"
+                                            value="8"
+                                            placeholder="Characters per line"
+                                        />
+                                    </div>
+                                </section>
+                            </div>
+
+                            <p class="helper-text" id="boardSizeHelper">
+                                For text, this means rows of characters and max characters per line. For image, this becomes rows × columns.
+                            </p>
+                            <p class="helper-text image-limit-note" id="simulationImageLimitNote" hidden>
+                                Max preview size: --
+                            </p>
+
+                            <section class="action-group simulation-actions">
+                                <button class="btn btn-primary" onclick="applySimulationBoardSize()">Apply Size</button>
+                                <button class="btn btn-secondary" onclick="resetSimulationBoard()">Reset Simulation</button>
+                            </section>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>Display Input</h2>
+                                <span class="card-meta" id="simulationDisplayMeta">Ready</span>
+                            </div>
+
+                            <section id="simulationTextInputSection" class="control-group">
+                                <label for="simulationTextInput" class="input-label">Text to Display</label>
+                                <div class="input-row">
+                                    <input
+                                        id="simulationTextInput"
+                                        type="text"
+                                        placeholder="Enter text to simulate on the large board"
+                                        maxlength="1000"
+                                    />
+                                </div>
+                                <p class="helper-text">
+                                    Characters wrap to the next line when they exceed the max characters per line. If the full text exceeds the board capacity, use Continue Text in the preview panel.
+                                </p>
+                            </section>
+
+                            <section id="simulationJpgInputSection" class="control-group" hidden>
+                                <label for="simulationJpgInput" class="input-label">Image Upload</label>
+                                <div class="input-row">
+                                    <input
+                                        id="simulationJpgInput"
+                                        type="file"
+                                        accept=".jpg,.jpeg,image/jpeg"
+                                        disabled
+                                    />
+                                </div>
+                                <p class="helper-text">
+                                    Image upload UI is included, and the board switches to rows × columns mode, but image rendering is still disabled for now.
+                                </p>
+                            </section>
+
+                            <section class="action-group simulation-actions">
+                                <button class="btn btn-primary" onclick="renderSimulationInput()">Render on Board</button>
+                                <button class="btn btn-ghost" onclick="clearSimulationContent()">Clear Content</button>
+                            </section>
+
+                            <p class="helper-text simulation-pagination-note" id="simulationPaginationNote">
+                                No overflow text.
+                            </p>
                         </div>
                     </div>
 
-                    <div id="preview" class="preview-empty">
-                        No preview generated yet.
+                    <div class="simulation-preview">
+                        <div class="card">
+                            <div class="card-header preview-header">
+                                <div class="preview-title-group">
+                                    <h2>Large Board Preview</h2>
+                                    <span class="card-meta" id="simulationPreviewCount">24 character slots</span>
+                                </div>
+
+                                <div class="simulation-preview-actions">
+                                    <button
+                                        class="btn btn-secondary btn-compact"
+                                        id="continueTextBtn"
+                                        onclick="continueSimulationText()"
+                                        hidden
+                                    >
+                                        Continue Text
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="simulation-board-shell text-fit" id="simulationBoardShell">
+                                <div id="simulationBoard" class="simulation-board" aria-label="Large board simulation"></div>
+                            </div>
+
+                            <div class="simulation-detail-section" id="simulationDetailSection">
+                                <div class="simulation-detail-header">
+                                    <div class="preview-title-group">
+                                        <h3>Detailed Preview</h3>
+                                        <span class="card-meta" id="simulationDetailCount">0 items</span>
+                                    </div>
+                                </div>
+
+                                <div id="simulationDetailPreview" class="preview-empty">
+                                    No detailed preview generated yet.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -92,8 +307,72 @@
         const detailModeBtn = document.getElementById("detailModeBtn");
         const lineModeBtn = document.getElementById("lineModeBtn");
 
+        const mainTabBtn = document.getElementById("mainTabBtn");
+        const simulationTabBtn = document.getElementById("simulationTabBtn");
+        const mainTabPanel = document.getElementById("mainTabPanel");
+        const simulationTabPanel = document.getElementById("simulationTabPanel");
+
+        const boardRowsInputEl = document.getElementById("boardRowsInput");
+        const boardColsInputEl = document.getElementById("boardColsInput");
+        const boardRowsLabelEl = document.getElementById("boardRowsLabel");
+        const boardColsLabelEl = document.getElementById("boardColsLabel");
+        const boardSizeHelperEl = document.getElementById("boardSizeHelper");
+        const modeDescriptionEl = document.getElementById("modeDescription");
+        const simulationImageLimitNoteEl = document.getElementById("simulationImageLimitNote");
+
+        const simulationBoardShellEl = document.getElementById("simulationBoardShell");
+        const simulationBoardEl = document.getElementById("simulationBoard");
+        const simulationBoardSizeMetaEl = document.getElementById("simulationBoardSizeMeta");
+        const simulationPreviewCountEl = document.getElementById("simulationPreviewCount");
+        const simulationDetailSectionEl = document.getElementById("simulationDetailSection");
+        const simulationDetailPreviewEl = document.getElementById("simulationDetailPreview");
+        const simulationDetailCountEl = document.getElementById("simulationDetailCount");
+
+        const simulationTextModeBtn = document.getElementById("simulationTextModeBtn");
+        const simulationJpgModeBtn = document.getElementById("simulationJpgModeBtn");
+        const simulationInputModeMetaEl = document.getElementById("simulationInputModeMeta");
+        const simulationDisplayMetaEl = document.getElementById("simulationDisplayMeta");
+        const simulationTextInputSectionEl = document.getElementById("simulationTextInputSection");
+        const simulationJpgInputSectionEl = document.getElementById("simulationJpgInputSection");
+        const simulationTextInputEl = document.getElementById("simulationTextInput");
+        const simulationJpgInputEl = document.getElementById("simulationJpgInput");
+        const continueTextBtnEl = document.getElementById("continueTextBtn");
+        const simulationPaginationNoteEl = document.getElementById("simulationPaginationNote");
+
         let previewMode = "detail";
+        let activeAppTab = "main";
         let latestPatterns = [];
+        let simulationInputMode = "text";
+
+        const TEXT_MODE_DEFAULTS = {
+            rows: 3,
+            cols: 8
+        };
+
+        const IMAGE_MODE_DEFAULTS = {
+            rows: 12,
+            cols: 18
+        };
+
+        const IMAGE_SIZING = {
+            minDotSize: 2,
+            preferredGap: 10,
+            minGap: 2,
+            dotCapReferenceRows: 12,
+            dotCapReferenceCols: 18,
+            gapCapReferenceRows: 20,
+            gapCapReferenceCols: 20
+        };
+
+        const simulationState = {
+            rows: TEXT_MODE_DEFAULTS.rows,
+            cols: TEXT_MODE_DEFAULTS.cols,
+            textPatterns: [],
+            textOffset: 0,
+            hasMoreText: false,
+            activeTextSliceLength: 0,
+            currentPagePatterns: []
+        };
 
         function escapeHtml(value) {
             return String(value)
@@ -104,12 +383,48 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function clampInteger(value, min, max, fallback) {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isNaN(parsed)) {
+                return fallback;
+            }
+            return Math.min(max, Math.max(min, parsed));
+        }
+
         function setStatus(message, type = "idle") {
             statusPillEl.textContent = type.charAt(0).toUpperCase() + type.slice(1);
             statusPillEl.className = `status-pill pill-${type}`;
 
             statusInlineEl.textContent = message;
             statusInlineEl.className = `status-inline status-${type}`;
+        }
+
+        function setAppTab(tab) {
+            activeAppTab = tab;
+
+            const isMain = tab === "main";
+            mainTabBtn.classList.toggle("active", isMain);
+            simulationTabBtn.classList.toggle("active", !isMain);
+
+            mainTabBtn.setAttribute("aria-selected", String(isMain));
+            simulationTabBtn.setAttribute("aria-selected", String(!isMain));
+
+            mainTabPanel.classList.toggle("active", isMain);
+            simulationTabPanel.classList.toggle("active", !isMain);
+
+            mainTabPanel.hidden = !isMain;
+            simulationTabPanel.hidden = isMain;
+
+            if (!isMain && simulationInputMode === "jpg") {
+                requestAnimationFrame(() => {
+                    updateImageLimitDisplay();
+                    updateImageBoardSizing();
+                });
+            }
         }
 
         function setPreviewMode(mode) {
@@ -173,13 +488,11 @@
         function renderLinePreview(patterns) {
             return `
                 <div class="braille-line-preview">
-                    ${patterns.map(item => {
-                        return `
-                            <div class="braille-line-item">
-                                ${renderBrailleCell(item.pattern, "braille-cell-line")}
-                            </div>
-                        `;
-                    }).join("")}
+                    ${patterns.map(item => `
+                        <div class="braille-line-item">
+                            ${renderBrailleCell(item.pattern, "braille-cell-line")}
+                        </div>
+                    `).join("")}
                 </div>
             `;
         }
@@ -204,6 +517,596 @@
             }
         }
 
+        function renderSimulationDetailPreview(patterns = []) {
+            if (simulationInputMode !== "text") {
+                simulationDetailSectionEl.hidden = true;
+                simulationDetailPreviewEl.className = "preview-empty";
+                simulationDetailPreviewEl.innerHTML = "Detailed preview is only shown in text mode.";
+                simulationDetailCountEl.textContent = "0 items";
+                return;
+            }
+
+            simulationDetailSectionEl.hidden = false;
+
+            if (!patterns.length) {
+                simulationDetailPreviewEl.className = "preview-empty";
+                simulationDetailPreviewEl.innerHTML = "No detailed preview generated yet.";
+                simulationDetailCountEl.textContent = "0 items";
+                return;
+            }
+
+            simulationDetailPreviewEl.className = "preview-content";
+            simulationDetailPreviewEl.innerHTML = renderDetailPreview(patterns);
+            simulationDetailCountEl.textContent = `${patterns.length} item${patterns.length === 1 ? "" : "s"}`;
+        }
+
+        function getTextBoardCapacity() {
+            return simulationState.rows * simulationState.cols;
+        }
+
+        function getImagePreviewMetrics() {
+            const shellStyles = window.getComputedStyle(simulationBoardShellEl);
+            const paddingX =
+                parseFloat(shellStyles.paddingLeft) + parseFloat(shellStyles.paddingRight);
+            const paddingY =
+                parseFloat(shellStyles.paddingTop) + parseFloat(shellStyles.paddingBottom);
+
+            const availableWidth = Math.max(120, simulationBoardShellEl.clientWidth - paddingX);
+            const availableHeight = Math.max(120, simulationBoardShellEl.clientHeight - paddingY);
+
+            return { availableWidth, availableHeight };
+        }
+
+        function getImageSizeLimits() {
+            const { availableWidth, availableHeight } = getImagePreviewMetrics();
+            const minDot = IMAGE_SIZING.minDotSize;
+            const minGap = IMAGE_SIZING.minGap;
+
+            const maxCols = Math.max(
+                1,
+                Math.floor((availableWidth + minGap) / (minDot + minGap))
+            );
+
+            const maxRows = Math.max(
+                1,
+                Math.floor((availableHeight + minGap) / (minDot + minGap))
+            );
+
+            return { maxRows, maxCols, availableWidth, availableHeight };
+        }
+
+        function getMaxImageDotCap(availableWidth, availableHeight) {
+            const cols = IMAGE_SIZING.dotCapReferenceCols;
+            const rows = IMAGE_SIZING.dotCapReferenceRows;
+            const gap = IMAGE_SIZING.preferredGap;
+
+            const widthLimited = Math.floor((availableWidth - gap * Math.max(0, cols - 1)) / cols);
+            const heightLimited = Math.floor((availableHeight - gap * Math.max(0, rows - 1)) / rows);
+
+            return Math.max(
+                IMAGE_SIZING.minDotSize,
+                Math.min(widthLimited, heightLimited)
+            );
+        }
+
+        function getMaxImageGapCaps(availableWidth, availableHeight) {
+            const cols = IMAGE_SIZING.gapCapReferenceCols;
+            const rows = IMAGE_SIZING.gapCapReferenceRows;
+            const dotCap = getMaxImageDotCap(availableWidth, availableHeight);
+
+            const gapCapX = cols > 1
+                ? Math.max(
+                    IMAGE_SIZING.minGap,
+                    Math.floor((availableWidth - dotCap * cols) / (cols - 1))
+                )
+                : 0;
+
+            const gapCapY = rows > 1
+                ? Math.max(
+                    IMAGE_SIZING.minGap,
+                    Math.floor((availableHeight - dotCap * rows) / (rows - 1))
+                )
+                : 0;
+
+            return { gapCapX, gapCapY, dotCap };
+        }
+
+        function updateImageLimitDisplay() {
+            const { maxRows, maxCols } = getImageSizeLimits();
+
+            simulationImageLimitNoteEl.hidden = simulationInputMode !== "jpg";
+            simulationImageLimitNoteEl.textContent =
+                `Max preview size in image mode: ${maxRows} rows × ${maxCols} columns.`;
+
+            if (simulationInputMode === "jpg") {
+                boardRowsInputEl.max = String(maxRows);
+                boardColsInputEl.max = String(maxCols);
+            }
+        }
+
+        function updateSimulationControlsForMode() {
+            const isText = simulationInputMode === "text";
+
+            simulationTextModeBtn.classList.toggle("active", isText);
+            simulationJpgModeBtn.classList.toggle("active", !isText);
+
+            simulationInputModeMetaEl.textContent = isText ? "Text Mode" : "Image Mode";
+
+            simulationTextInputSectionEl.hidden = !isText;
+            simulationJpgInputSectionEl.hidden = isText;
+
+            if (isText) {
+                boardRowsLabelEl.textContent = "Rows";
+                boardColsLabelEl.textContent = "Characters Per Line";
+                boardRowsInputEl.max = "100";
+                boardColsInputEl.max = "100";
+                boardColsInputEl.placeholder = "Characters per line";
+                modeDescriptionEl.textContent =
+                    "Text mode uses board size as rows × characters per line. Each character is shown as a grouped 2 × 3 Braille cell.";
+                boardSizeHelperEl.textContent =
+                    "Rows = number of text lines. Characters Per Line = max characters shown before wrapping to the next line.";
+                simulationImageLimitNoteEl.hidden = true;
+            } else {
+                boardRowsLabelEl.textContent = "Rows";
+                boardColsLabelEl.textContent = "Columns";
+                boardColsInputEl.placeholder = "Columns";
+                modeDescriptionEl.textContent =
+                    "Image mode uses board size as rows × columns. The dots resize to fit the preview box within the maximum supported preview size.";
+                boardSizeHelperEl.textContent =
+                    "Rows × Columns defines a uniform dot matrix for image mode.";
+                updateImageLimitDisplay();
+            }
+
+            updateSimulationBoardMeta();
+            updateSimulationPaginationUI();
+            renderSimulationDetailPreview(simulationState.currentPagePatterns);
+        }
+
+        function updateSimulationBoardMeta() {
+            if (simulationInputMode === "text") {
+                const totalSlots = simulationState.rows * simulationState.cols;
+                simulationBoardSizeMetaEl.textContent = `${simulationState.rows} rows × ${simulationState.cols} chars`;
+                simulationPreviewCountEl.textContent = `${totalSlots} character slot${totalSlots === 1 ? "" : "s"}`;
+            } else {
+                const totalDots = simulationState.rows * simulationState.cols;
+                simulationBoardSizeMetaEl.textContent = `${simulationState.rows} rows × ${simulationState.cols} cols`;
+                simulationPreviewCountEl.textContent = `${totalDots} dot${totalDots === 1 ? "" : "s"}`;
+            }
+        }
+
+        function updateSimulationPaginationUI() {
+            if (simulationInputMode !== "text") {
+                continueTextBtnEl.hidden = true;
+                simulationPaginationNoteEl.textContent = "Pagination is only used in text mode.";
+                return;
+            }
+
+            if (!simulationState.textPatterns.length) {
+                continueTextBtnEl.hidden = true;
+                simulationPaginationNoteEl.textContent = "No overflow text.";
+                return;
+            }
+
+            const capacity = getTextBoardCapacity();
+            const start = simulationState.textOffset;
+            const end = Math.min(start + capacity, simulationState.textPatterns.length);
+
+            if (simulationState.hasMoreText) {
+                continueTextBtnEl.hidden = false;
+                simulationPaginationNoteEl.textContent =
+                    `Showing characters ${start + 1}-${end} of ${simulationState.textPatterns.length}. More text remains.`;
+            } else {
+                continueTextBtnEl.hidden = true;
+                simulationPaginationNoteEl.textContent =
+                    `Showing characters ${start + 1}-${end} of ${simulationState.textPatterns.length}.`;
+            }
+        }
+
+        function clearSimulationBoard() {
+            simulationBoardEl.innerHTML = "";
+        }
+
+        function createBrailleCharCell(pattern) {
+            const safePattern = String(pattern || "000000").padEnd(6, "0").slice(0, 6);
+            const dots = safePattern.split("");
+
+            const charCell = document.createElement("div");
+            charCell.className = "simulation-char-cell";
+
+            dots.forEach((bit) => {
+                const dotEl = document.createElement("span");
+                dotEl.className = "simulation-dot";
+                if (bit === "1") {
+                    dotEl.classList.add("active");
+                }
+                dotEl.setAttribute("aria-hidden", "true");
+                charCell.appendChild(dotEl);
+            });
+
+            return charCell;
+        }
+
+        function updateImageBoardSizing() {
+            if (simulationInputMode !== "jpg") {
+                return;
+            }
+
+            const rows = Math.max(1, simulationState.rows);
+            const cols = Math.max(1, simulationState.cols);
+            const { availableWidth, availableHeight } = getImagePreviewMetrics();
+            const { dotCap, gapCapX, gapCapY } = getMaxImageGapCaps(availableWidth, availableHeight);
+
+            /*
+            * Use one shared gap value so spacing is identical in X and Y.
+            * Also scale the board to fill the preview box as much as possible.
+            */
+            let dotSize = Math.floor(Math.min(
+                cols > 0 ? availableWidth / cols : availableWidth,
+                rows > 0 ? availableHeight / rows : availableHeight
+            ));
+
+            if (!Number.isFinite(dotSize) || dotSize <= 0) {
+                dotSize = IMAGE_SIZING.minDotSize;
+            }
+
+            dotSize = clamp(dotSize, IMAGE_SIZING.minDotSize, dotCap);
+
+            /*
+            * NEW: density-based dot scaling
+            * Smaller boards → slightly smaller dots (better visual balance)
+            */
+            const density = rows * cols;
+
+            let scaleFactor = 1;
+
+            /* tune these thresholds as needed */
+            if (density < 400) {
+                scaleFactor = 0.7;   // small boards (e.g., 20x10)
+            } else if (density < 900) {
+                scaleFactor = 0.8;   // medium boards (e.g., 30x30)
+            } else if (density < 1600) {
+                scaleFactor = 0.92;   // slightly reduce
+            } else {
+                scaleFactor = 1;      // large boards (50x50+) stay unchanged
+            }
+
+            dotSize = Math.floor(dotSize * scaleFactor);
+
+            let sharedGapX = cols > 1
+                ? (availableWidth - (dotSize * cols)) / (cols - 1)
+                : 0;
+
+            let sharedGapY = rows > 1
+                ? (availableHeight - (dotSize * rows)) / (rows - 1)
+                : 0;
+
+            let sharedGap = Math.floor(Math.min(sharedGapX, sharedGapY));
+
+            const sharedGapCap = Math.min(
+                cols > 1 ? gapCapX : Number.POSITIVE_INFINITY,
+                rows > 1 ? gapCapY : Number.POSITIVE_INFINITY
+            );
+
+            if (!Number.isFinite(sharedGap)) {
+                sharedGap = 0;
+            }
+
+            if (rows > 1 || cols > 1) {
+                sharedGap = clamp(sharedGap, IMAGE_SIZING.minGap, sharedGapCap);
+            } else {
+                sharedGap = 0;
+            }
+
+            /*
+            * After clamping the shared gap, recompute the biggest dot size that
+            * still fits both width and height.
+            */
+            const fitDotWidth = Math.floor(
+                (availableWidth - sharedGap * Math.max(0, cols - 1)) / cols
+            );
+            const fitDotHeight = Math.floor(
+                (availableHeight - sharedGap * Math.max(0, rows - 1)) / rows
+            );
+
+            dotSize = clamp(
+                Math.min(dotSize, fitDotWidth, fitDotHeight),
+                IMAGE_SIZING.minDotSize,
+                dotCap
+            );
+
+            /*
+            * Center the board while keeping equal spacing horizontally and vertically.
+            */
+            simulationBoardEl.style.setProperty("--simulation-image-dot-size", `${dotSize}px`);
+            simulationBoardEl.style.setProperty("--simulation-image-gap-x", `${sharedGap}px`);
+            simulationBoardEl.style.setProperty("--simulation-image-gap-y", `${sharedGap}px`);
+            simulationBoardEl.style.gridTemplateColumns = `repeat(${cols}, ${dotSize}px)`;
+            simulationBoardEl.style.gridTemplateRows = `repeat(${rows}, ${dotSize}px)`;
+        }
+        
+        function buildTextSimulationBoard() {
+            clearSimulationBoard();
+
+            simulationBoardShellEl.classList.remove("image-fit");
+            simulationBoardShellEl.classList.add("text-fit");
+
+            simulationBoardEl.className = "simulation-board simulation-board-text";
+
+            /* hard reset all inline styles from image mode */
+            simulationBoardEl.removeAttribute("style");
+
+            /* explicitly restore text-mode layout */
+            simulationBoardEl.style.width = "max-content";
+            simulationBoardEl.style.height = "auto";
+            simulationBoardEl.style.gridTemplateColumns =
+                `repeat(${simulationState.cols}, var(--simulation-char-cell-width))`;
+
+            const capacity = getTextBoardCapacity();
+            const start = simulationState.textOffset;
+            const end = Math.min(start + capacity, simulationState.textPatterns.length);
+            const visiblePatterns = simulationState.textPatterns.slice(start, end);
+
+            simulationState.currentPagePatterns = visiblePatterns;
+            simulationState.activeTextSliceLength = visiblePatterns.length;
+            simulationState.hasMoreText = end < simulationState.textPatterns.length;
+
+            const fragment = document.createDocumentFragment();
+
+            for (let index = 0; index < capacity; index += 1) {
+                const pattern = visiblePatterns[index]?.pattern ?? "000000";
+                const charCellEl = createBrailleCharCell(pattern);
+                fragment.appendChild(charCellEl);
+            }
+
+            simulationBoardEl.appendChild(fragment);
+
+            simulationBoardShellEl.scrollLeft = 0;
+            simulationBoardShellEl.scrollTop = 0;
+
+            updateSimulationBoardMeta();
+            updateSimulationPaginationUI();
+            renderSimulationDetailPreview(visiblePatterns);
+        }
+
+        function buildImageSimulationBoard() {
+            clearSimulationBoard();
+
+            simulationBoardShellEl.classList.remove("text-fit");
+            simulationBoardShellEl.classList.add("image-fit");
+
+            simulationBoardEl.className = "simulation-board simulation-board-image";
+
+            /* hard reset all inline styles from text mode */
+            simulationBoardEl.removeAttribute("style");
+
+            /* explicitly restore image-mode layout */
+            simulationBoardEl.style.width = "100%";
+            simulationBoardEl.style.height = "100%";
+
+            const totalDots = simulationState.rows * simulationState.cols;
+            const fragment = document.createDocumentFragment();
+
+            simulationState.currentPagePatterns = [];
+
+            for (let index = 0; index < totalDots; index += 1) {
+                const dotEl = document.createElement("span");
+                dotEl.className = "simulation-dot";
+                dotEl.setAttribute("aria-hidden", "true");
+                fragment.appendChild(dotEl);
+            }
+
+            simulationBoardEl.appendChild(fragment);
+
+            updateSimulationBoardMeta();
+            updateSimulationPaginationUI();
+            renderSimulationDetailPreview([]);
+
+            requestAnimationFrame(() => {
+                updateImageLimitDisplay();
+                updateImageBoardSizing();
+            });
+        }
+
+
+        function buildSimulationBoard() {
+            if (simulationInputMode === "text") {
+                buildTextSimulationBoard();
+            } else {
+                buildImageSimulationBoard();
+            }
+        }
+
+        function setSimulationInputMode(mode) {
+            simulationInputMode = mode;
+
+            if (mode === "text") {
+                simulationState.rows = clampInteger(boardRowsInputEl.value, 1, 100, TEXT_MODE_DEFAULTS.rows);
+                simulationState.cols = clampInteger(boardColsInputEl.value, 1, 100, TEXT_MODE_DEFAULTS.cols);
+            } else {
+                const { maxRows, maxCols } = getImageSizeLimits();
+                simulationState.rows = clampInteger(boardRowsInputEl.value, 1, maxRows, IMAGE_MODE_DEFAULTS.rows);
+                simulationState.cols = clampInteger(boardColsInputEl.value, 1, maxCols, IMAGE_MODE_DEFAULTS.cols);
+            }
+
+            boardRowsInputEl.value = simulationState.rows;
+            boardColsInputEl.value = simulationState.cols;
+
+            updateSimulationControlsForMode();
+            buildSimulationBoard();
+        }
+
+        function applySimulationBoardSize() {
+            if (simulationInputMode === "text") {
+                const rows = clampInteger(boardRowsInputEl.value, 1, 100, simulationState.rows);
+                const cols = clampInteger(boardColsInputEl.value, 1, 100, simulationState.cols);
+
+                boardRowsInputEl.value = rows;
+                boardColsInputEl.value = cols;
+
+                simulationState.rows = rows;
+                simulationState.cols = cols;
+                simulationState.textOffset = 0;
+
+                buildSimulationBoard();
+                setStatus(`Text simulation board resized to ${rows} rows by ${cols} characters per line.`, "success");
+                return;
+            }
+
+            const { maxRows, maxCols } = getImageSizeLimits();
+            const inputRows = Number.parseInt(boardRowsInputEl.value, 10);
+            const inputCols = Number.parseInt(boardColsInputEl.value, 10);
+
+            const requestedRows = clampInteger(boardRowsInputEl.value, 1, maxRows, simulationState.rows);
+            const requestedCols = clampInteger(boardColsInputEl.value, 1, maxCols, simulationState.cols);
+
+            boardRowsInputEl.value = requestedRows;
+            boardColsInputEl.value = requestedCols;
+
+            simulationState.rows = requestedRows;
+            simulationState.cols = requestedCols;
+
+            buildSimulationBoard();
+
+            if (inputRows > maxRows || inputCols > maxCols) {
+                setStatus(
+                    `Image simulation board was limited to ${maxRows} rows × ${maxCols} columns to fit the preview.`,
+                    "warning"
+                );
+            } else {
+                setStatus(`Image simulation board resized to ${requestedRows} rows by ${requestedCols} columns.`, "success");
+            }
+        }
+
+        function clearSimulationContent() {
+            simulationState.textPatterns = [];
+            simulationState.textOffset = 0;
+            simulationState.hasMoreText = false;
+            simulationState.activeTextSliceLength = 0;
+            simulationState.currentPagePatterns = [];
+
+            if (simulationInputMode === "text") {
+                buildTextSimulationBoard();
+            } else {
+                buildImageSimulationBoard();
+            }
+
+            setStatus("Simulation content cleared.", "success");
+        }
+
+        function resetSimulationBoard() {
+            if (simulationInputMode === "text") {
+                simulationState.rows = TEXT_MODE_DEFAULTS.rows;
+                simulationState.cols = TEXT_MODE_DEFAULTS.cols;
+            } else {
+                const { maxRows, maxCols } = getImageSizeLimits();
+                simulationState.rows = Math.min(IMAGE_MODE_DEFAULTS.rows, maxRows);
+                simulationState.cols = Math.min(IMAGE_MODE_DEFAULTS.cols, maxCols);
+            }
+
+            simulationState.textPatterns = [];
+            simulationState.textOffset = 0;
+            simulationState.hasMoreText = false;
+            simulationState.activeTextSliceLength = 0;
+            simulationState.currentPagePatterns = [];
+
+            boardRowsInputEl.value = simulationState.rows;
+            boardColsInputEl.value = simulationState.cols;
+            simulationTextInputEl.value = "";
+
+            buildSimulationBoard();
+            setStatus("Simulation board reset to default.", "success");
+        }
+
+        async function fetchBraillePatterns(text) {
+            const response = await fetch("/display", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Display request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            return Array.isArray(data.patterns) ? data.patterns : [];
+        }
+
+        async function renderSimulationInput() {
+            if (simulationInputMode === "jpg") {
+                buildImageSimulationBoard();
+                simulationDisplayMetaEl.textContent = "Image Mode Placeholder";
+                setStatus("Image mode board layout is ready, but image rendering is not implemented yet.", "warning");
+                return;
+            }
+
+            const text = simulationTextInputEl.value;
+
+            if (!text.trim()) {
+                simulationState.textPatterns = [];
+                simulationState.textOffset = 0;
+                simulationState.hasMoreText = false;
+                simulationState.activeTextSliceLength = 0;
+                simulationState.currentPagePatterns = [];
+                buildTextSimulationBoard();
+                simulationDisplayMetaEl.textContent = "Ready";
+                setStatus("Please enter text to render onto the simulation board.", "warning");
+                return;
+            }
+
+            try {
+                setStatus("Rendering text on the large simulation board...", "loading");
+
+                const patterns = await fetchBraillePatterns(text);
+                simulationState.textPatterns = patterns;
+                simulationState.textOffset = 0;
+                simulationDisplayMetaEl.textContent = "Text Rendered";
+
+                buildTextSimulationBoard();
+
+                if (simulationState.hasMoreText) {
+                    setStatus("Text rendered. Use Continue Text in the preview panel to show the next page.", "success");
+                } else {
+                    setStatus("Simulation board rendered successfully.", "success");
+                }
+            } catch (error) {
+                console.error(error);
+                simulationDisplayMetaEl.textContent = "Error";
+                setStatus("Failed to render simulation text.", "error");
+            }
+        }
+
+        function continueSimulationText() {
+            if (simulationInputMode !== "text") {
+                return;
+            }
+
+            const capacity = getTextBoardCapacity();
+
+            if (!simulationState.textPatterns.length || capacity <= 0) {
+                updateSimulationPaginationUI();
+                return;
+            }
+
+            const nextOffset = simulationState.textOffset + capacity;
+
+            if (nextOffset >= simulationState.textPatterns.length) {
+                simulationState.hasMoreText = false;
+                updateSimulationPaginationUI();
+                setStatus("No more text remains to display.", "warning");
+                return;
+            }
+
+            simulationState.textOffset = nextOffset;
+            buildTextSimulationBoard();
+
+            if (simulationState.hasMoreText) {
+                setStatus("Showing next page of text.", "success");
+            } else {
+                setStatus("Showing final page of text.", "success");
+            }
+        }
+
         async function sendText() {
             const text = textInputEl.value.trim();
 
@@ -216,18 +1119,7 @@
             try {
                 setStatus("Sending text to board...", "loading");
 
-                const response = await fetch("/display", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Display request failed with status ${response.status}`);
-                }
-
-                const data = await response.json();
-                const patterns = Array.isArray(data.patterns) ? data.patterns : [];
+                const patterns = await fetchBraillePatterns(text);
 
                 renderPreview(patterns);
                 setStatus("Text displayed successfully.", "success");
@@ -278,6 +1170,25 @@
                 setStatus("Failed to clear the board.", "error");
             }
         }
+
+        const simulationResizeObserver = new ResizeObserver(() => {
+            if (simulationInputMode === "jpg") {
+                updateImageLimitDisplay();
+                updateImageBoardSizing();
+            }
+        });
+
+        simulationResizeObserver.observe(simulationBoardShellEl);
+
+        window.addEventListener("resize", () => {
+            if (simulationInputMode === "jpg") {
+                updateImageLimitDisplay();
+                updateImageBoardSizing();
+            }
+        });
+
+        updateSimulationControlsForMode();
+        buildSimulationBoard();
     </script>
 </body>
 </html>
