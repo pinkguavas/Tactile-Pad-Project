@@ -29,6 +29,7 @@ As detailed as possible.
 
 ### 3.3 Software Components
 - **Image Mapping Module**
+  
   The image mapping module allows users to upload images through the web interface and converts them into tactile binary matrices suitable for braille board rendering. 
   - Main functions implemented:
     - Image upload handling through the frontend interface.
@@ -38,6 +39,7 @@ As detailed as possible.
     - Generation of binary tactile mapping matrices.
     - Frontend tactile preview rendering for visualization.
   - Current integration
+
 The image mapping module has been successfully integrated into the latest frontend interface and supports real-time simulation display.
 
 ## 4. Progress
