@@ -38,9 +38,10 @@ As detailed as possible.
     - Grayscale conversion and threshold-based binarization.
     - Generation of binary tactile mapping matrices.
     - Frontend tactile preview rendering for visualization.
+  
   - Current integration
 
-The image mapping module has been successfully integrated into the latest frontend interface and supports real-time simulation display.
+    The image mapping module has been successfully integrated into the latest frontend interface and supports real-time simulation display.
 
 ## 4. Progress
 Progress Summary
