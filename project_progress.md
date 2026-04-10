@@ -21,42 +21,42 @@ Provide a concise summary (150–250 words) describing:
 
 ## 3. Project Overview
 
-### 4.1 Project Description
+### 3.1 Project Description
 High-level description of the system.
 As detailed as possible.
 
-### 4.2 Hardware Components
+### 3.2 Hardware Components
 
-### 4.3 Software Components
+### 3.3 Software Components
 
-## 5. Progress
+## 4. Progress
 Progress Summary
 
-### 5.1 Hardware Progress
+### 4.1 Hardware Progress
 
-### 5.2 Software Progress
+### 4.2 Software Progress
 
-### 5.3 Current Results
+### 4.3 Current Results
 
-## 6. Challenges and Solutions
+## 5. Challenges and Solutions
 
-## 7. Updated Plans
+## 6. Updated Plans
 
-### 7.1 Updated Timeline
+### 6.1 Updated Timeline
 As detail as possible.
 | Phase | Activities | Duration |
 |------|------------|----------|
 
-### 7.2 Updated Workload Distributions
+### 6.2 Updated Workload Distributions
 
 
-## 8. Demo Plan
+## 7. Demo Plan
 Explain your live demonstration plan in details
 
-## 9. Contributions
+## 8. Contributions
 List each member's contributions so far.
 
-## 10. Conclusion
+## 9. Conclusion
 Brief reflection on current status, remaining challenges and plans.
 
 ## References
