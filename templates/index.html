@@ -235,12 +235,11 @@
                                     <input
                                         id="simulationJpgInput"
                                         type="file"
-                                        accept=".jpg,.jpeg,image/jpeg"
-                                        disabled
+                                        accept="image/*"
                                     />
                                 </div>
                                 <p class="helper-text">
-                                    Image upload UI is included, and the board switches to rows × columns mode, but image rendering is still disabled for now.
+                                    Upload an image and render its 0/1 tactile mapping onto the large board preview.
                                 </p>
                             </section>
 
@@ -350,8 +349,8 @@
         };
 
         const IMAGE_MODE_DEFAULTS = {
-            rows: 12,
-            cols: 18
+            rows: 6,
+            cols: 6
         };
 
         const IMAGE_SIZING = {
@@ -371,7 +370,15 @@
             textOffset: 0,
             hasMoreText: false,
             activeTextSliceLength: 0,
-            currentPagePatterns: []
+            currentPagePatterns: [],
+            imageRows: [],
+            imageMeta: {
+                target_width: 0,
+                target_height: 0,
+                threshold: 0,
+                filename: "",
+                image_url: ""
+            }
         };
 
         function escapeHtml(value) {
@@ -519,10 +526,60 @@
 
         function renderSimulationDetailPreview(patterns = []) {
             if (simulationInputMode !== "text") {
-                simulationDetailSectionEl.hidden = true;
-                simulationDetailPreviewEl.className = "preview-empty";
-                simulationDetailPreviewEl.innerHTML = "Detailed preview is only shown in text mode.";
-                simulationDetailCountEl.textContent = "0 items";
+                simulationDetailSectionEl.hidden = false;
+
+                const imageRows = simulationState.imageRows || [];
+                const meta = simulationState.imageMeta || {};
+
+                if (!imageRows.length) {
+                    simulationDetailPreviewEl.className = "preview-empty";
+                    simulationDetailPreviewEl.innerHTML = "No image mapping generated yet.";
+                    simulationDetailCountEl.textContent = "0 items";
+                    return;
+                }
+
+                const width = meta.target_width ?? "N/A";
+                const height = meta.target_height ?? "N/A";
+                const threshold = meta.threshold ?? "N/A";
+
+                const htmlRows = imageRows.map(row => {
+                    const safeRow = Array.isArray(row) ? row : [];
+                    return `
+                        <div style="display:flex; gap:6px; flex-wrap:nowrap;">
+                            ${safeRow.map(value => `
+                                <span
+                                    style="
+                                        width:22px;
+                                        height:22px;
+                                        display:inline-flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        border-radius:6px;
+                                        font-size:12px;
+                                        font-weight:600;
+                                        background:${value === 1 ? "#111" : "#e9ecef"};
+                                        color:${value === 1 ? "#fff" : "#333"};
+                                    "
+                                >${escapeHtml(value)}</span>
+                            `).join("")}
+                        </div>
+                    `;
+                }).join("");
+
+                simulationDetailPreviewEl.className = "preview-content";
+                simulationDetailPreviewEl.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:14px;">
+                            <span><strong>Width:</strong> ${escapeHtml(width)}</span>
+                            <span><strong>Height:</strong> ${escapeHtml(height)}</span>
+                            <span><strong>Threshold:</strong> ${escapeHtml(threshold)}</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            ${htmlRows}
+                        </div>
+                    </div>
+                `;
+                simulationDetailCountEl.textContent = `${imageRows.length} row${imageRows.length === 1 ? "" : "s"}`;
                 return;
             }
 
@@ -651,9 +708,9 @@
                 boardColsLabelEl.textContent = "Columns";
                 boardColsInputEl.placeholder = "Columns";
                 modeDescriptionEl.textContent =
-                    "Image mode uses board size as rows × columns. The dots resize to fit the preview box within the maximum supported preview size.";
+                    "Image mode uses board size as rows × columns. The uploaded image is converted into a 0/1 tactile matrix and rendered on the board.";
                 boardSizeHelperEl.textContent =
-                    "Rows × Columns defines a uniform dot matrix for image mode.";
+                    "Rows × Columns defines the preview matrix for image mode.";
                 updateImageLimitDisplay();
             }
 
@@ -736,10 +793,6 @@
             const { availableWidth, availableHeight } = getImagePreviewMetrics();
             const { dotCap, gapCapX, gapCapY } = getMaxImageGapCaps(availableWidth, availableHeight);
 
-            /*
-            * Use one shared gap value so spacing is identical in X and Y.
-            * Also scale the board to fill the preview box as much as possible.
-            */
             let dotSize = Math.floor(Math.min(
                 cols > 0 ? availableWidth / cols : availableWidth,
                 rows > 0 ? availableHeight / rows : availableHeight
@@ -751,23 +804,18 @@
 
             dotSize = clamp(dotSize, IMAGE_SIZING.minDotSize, dotCap);
 
-            /*
-            * NEW: density-based dot scaling
-            * Smaller boards → slightly smaller dots (better visual balance)
-            */
             const density = rows * cols;
 
             let scaleFactor = 1;
 
-            /* tune these thresholds as needed */
             if (density < 400) {
-                scaleFactor = 0.7;   // small boards (e.g., 20x10)
+                scaleFactor = 0.7;
             } else if (density < 900) {
-                scaleFactor = 0.8;   // medium boards (e.g., 30x30)
+                scaleFactor = 0.8;
             } else if (density < 1600) {
-                scaleFactor = 0.92;   // slightly reduce
+                scaleFactor = 0.92;
             } else {
-                scaleFactor = 1;      // large boards (50x50+) stay unchanged
+                scaleFactor = 1;
             }
 
             dotSize = Math.floor(dotSize * scaleFactor);
@@ -797,10 +845,6 @@
                 sharedGap = 0;
             }
 
-            /*
-            * After clamping the shared gap, recompute the biggest dot size that
-            * still fits both width and height.
-            */
             const fitDotWidth = Math.floor(
                 (availableWidth - sharedGap * Math.max(0, cols - 1)) / cols
             );
@@ -814,16 +858,13 @@
                 dotCap
             );
 
-            /*
-            * Center the board while keeping equal spacing horizontally and vertically.
-            */
             simulationBoardEl.style.setProperty("--simulation-image-dot-size", `${dotSize}px`);
             simulationBoardEl.style.setProperty("--simulation-image-gap-x", `${sharedGap}px`);
             simulationBoardEl.style.setProperty("--simulation-image-gap-y", `${sharedGap}px`);
             simulationBoardEl.style.gridTemplateColumns = `repeat(${cols}, ${dotSize}px)`;
             simulationBoardEl.style.gridTemplateRows = `repeat(${rows}, ${dotSize}px)`;
         }
-        
+
         function buildTextSimulationBoard() {
             clearSimulationBoard();
 
@@ -831,11 +872,7 @@
             simulationBoardShellEl.classList.add("text-fit");
 
             simulationBoardEl.className = "simulation-board simulation-board-text";
-
-            /* hard reset all inline styles from image mode */
             simulationBoardEl.removeAttribute("style");
-
-            /* explicitly restore text-mode layout */
             simulationBoardEl.style.width = "max-content";
             simulationBoardEl.style.height = "auto";
             simulationBoardEl.style.gridTemplateColumns =
@@ -875,28 +912,33 @@
             simulationBoardShellEl.classList.add("image-fit");
 
             simulationBoardEl.className = "simulation-board simulation-board-image";
-
-            /* hard reset all inline styles from text mode */
             simulationBoardEl.removeAttribute("style");
-
-            /* explicitly restore image-mode layout */
             simulationBoardEl.style.width = "100%";
             simulationBoardEl.style.height = "100%";
 
-            const totalDots = simulationState.rows * simulationState.cols;
+            const rows = simulationState.imageRows || [];
+            const rowCount = simulationState.rows;
+            const colCount = simulationState.cols;
             const fragment = document.createDocumentFragment();
 
-            simulationState.currentPagePatterns = [];
+            for (let r = 0; r < rowCount; r += 1) {
+                const currentRow = Array.isArray(rows[r]) ? rows[r] : [];
 
-            for (let index = 0; index < totalDots; index += 1) {
-                const dotEl = document.createElement("span");
-                dotEl.className = "simulation-dot";
-                dotEl.setAttribute("aria-hidden", "true");
-                fragment.appendChild(dotEl);
+                for (let c = 0; c < colCount; c += 1) {
+                    const value = currentRow[c] === 1 ? 1 : 0;
+                    const dotEl = document.createElement("span");
+                    dotEl.className = "simulation-dot";
+                    if (value === 1) {
+                        dotEl.classList.add("active");
+                    }
+                    dotEl.setAttribute("aria-hidden", "true");
+                    fragment.appendChild(dotEl);
+                }
             }
 
             simulationBoardEl.appendChild(fragment);
 
+            simulationState.currentPagePatterns = [];
             updateSimulationBoardMeta();
             updateSimulationPaginationUI();
             renderSimulationDetailPreview([]);
@@ -906,7 +948,6 @@
                 updateImageBoardSizing();
             });
         }
-
 
         function buildSimulationBoard() {
             if (simulationInputMode === "text") {
@@ -965,6 +1006,22 @@
             simulationState.rows = requestedRows;
             simulationState.cols = requestedCols;
 
+            const currentImageRows = Array.isArray(simulationState.imageRows) ? simulationState.imageRows : [];
+            const resizedRows = [];
+
+            for (let r = 0; r < requestedRows; r += 1) {
+                const sourceRow = Array.isArray(currentImageRows[r]) ? currentImageRows[r] : [];
+                const newRow = [];
+
+                for (let c = 0; c < requestedCols; c += 1) {
+                    newRow.push(sourceRow[c] === 1 ? 1 : 0);
+                }
+
+                resizedRows.push(newRow);
+            }
+
+            simulationState.imageRows = resizedRows;
+
             buildSimulationBoard();
 
             if (inputRows > maxRows || inputCols > maxCols) {
@@ -983,6 +1040,18 @@
             simulationState.hasMoreText = false;
             simulationState.activeTextSliceLength = 0;
             simulationState.currentPagePatterns = [];
+            simulationState.imageRows = [];
+            simulationState.imageMeta = {
+                target_width: 0,
+                target_height: 0,
+                threshold: 0,
+                filename: "",
+                image_url: ""
+            };
+
+            if (simulationJpgInputEl) {
+                simulationJpgInputEl.value = "";
+            }
 
             if (simulationInputMode === "text") {
                 buildTextSimulationBoard();
@@ -990,6 +1059,7 @@
                 buildImageSimulationBoard();
             }
 
+            simulationDisplayMetaEl.textContent = "Ready";
             setStatus("Simulation content cleared.", "success");
         }
 
@@ -1008,12 +1078,22 @@
             simulationState.hasMoreText = false;
             simulationState.activeTextSliceLength = 0;
             simulationState.currentPagePatterns = [];
+            simulationState.imageRows = [];
+            simulationState.imageMeta = {
+                target_width: 0,
+                target_height: 0,
+                threshold: 0,
+                filename: "",
+                image_url: ""
+            };
 
             boardRowsInputEl.value = simulationState.rows;
             boardColsInputEl.value = simulationState.cols;
             simulationTextInputEl.value = "";
+            simulationJpgInputEl.value = "";
 
             buildSimulationBoard();
+            simulationDisplayMetaEl.textContent = "Ready";
             setStatus("Simulation board reset to default.", "success");
         }
 
@@ -1032,11 +1112,87 @@
             return Array.isArray(data.patterns) ? data.patterns : [];
         }
 
+        async function uploadImageForSimulation(file) {
+            const formData = new FormData();
+            formData.append("image", file);
+
+            const response = await fetch("/upload_image", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.status !== "ok") {
+                throw new Error(data.message || `Image upload failed with status ${response.status}`);
+            }
+
+            return data;
+        }
+
         async function renderSimulationInput() {
             if (simulationInputMode === "jpg") {
-                buildImageSimulationBoard();
-                simulationDisplayMetaEl.textContent = "Image Mode Placeholder";
-                setStatus("Image mode board layout is ready, but image rendering is not implemented yet.", "warning");
+                const file = simulationJpgInputEl.files && simulationJpgInputEl.files[0];
+
+                if (!file) {
+                    simulationState.imageRows = [];
+                    simulationState.imageMeta = {
+                        target_width: 0,
+                        target_height: 0,
+                        threshold: 0,
+                        filename: "",
+                        image_url: ""
+                    };
+                    buildImageSimulationBoard();
+                    simulationDisplayMetaEl.textContent = "Ready";
+                    setStatus("Please select an image to render onto the simulation board.", "warning");
+                    return;
+                }
+
+                try {
+                    setStatus("Uploading image and converting it for the simulation board...", "loading");
+
+                    const data = await uploadImageForSimulation(file);
+                    const rawRows = Array.isArray(data.rows) ? data.rows : [];
+
+                    const targetHeight = Number.isInteger(data.target_height)
+                        ? data.target_height
+                        : rawRows.length;
+
+                    const targetWidth = Number.isInteger(data.target_width)
+                        ? data.target_width
+                        : (rawRows[0] ? rawRows[0].length : 0);
+
+                    simulationState.rows = targetHeight > 0 ? targetHeight : simulationState.rows;
+                    simulationState.cols = targetWidth > 0 ? targetWidth : simulationState.cols;
+
+                    boardRowsInputEl.value = simulationState.rows;
+                    boardColsInputEl.value = simulationState.cols;
+
+                    simulationState.imageRows = rawRows.map(row => {
+                        const safeRow = Array.isArray(row) ? row : [];
+                        return safeRow.map(value => value === 1 ? 1 : 0);
+                    });
+
+                    simulationState.imageMeta = {
+                        target_width: data.target_width,
+                        target_height: data.target_height,
+                        threshold: data.threshold,
+                        filename: data.filename || file.name,
+                        image_url: data.image_url || ""
+                    };
+
+                    simulationDisplayMetaEl.textContent = "Image Rendered";
+
+                    updateSimulationControlsForMode();
+                    buildImageSimulationBoard();
+                    setStatus("Image converted and rendered successfully.", "success");
+                } catch (error) {
+                    console.error(error);
+                    simulationDisplayMetaEl.textContent = "Error";
+                    setStatus("Failed to render the uploaded image.", "error");
+                }
+
                 return;
             }
 
@@ -1170,6 +1326,22 @@
                 setStatus("Failed to clear the board.", "error");
             }
         }
+
+        simulationJpgInputEl.addEventListener("change", function () {
+            if (simulationInputMode !== "jpg") {
+                return;
+            }
+
+            const file = simulationJpgInputEl.files && simulationJpgInputEl.files[0];
+
+            if (!file) {
+                simulationDisplayMetaEl.textContent = "Ready";
+                return;
+            }
+
+            simulationDisplayMetaEl.textContent = `Selected: ${file.name}`;
+            setStatus("Image selected. Click Render on Board to convert it.", "idle");
+        });
 
         const simulationResizeObserver = new ResizeObserver(() => {
             if (simulationInputMode === "jpg") {
