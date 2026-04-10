@@ -1,11 +1,15 @@
-# Project Title - Proposal
+# Tactile Pad - Progress
 
 
 ## 1. Team Information
-- **Team Name:** (if applicable) 
+- **Team Name:** TechTile
 - **Team Members:**
-  - **Name** ([yourmail@brandeis.edu](mailto:yourmail@brandeis.edu)) – Role  
-- **Github Repository:**
+  - Neha Kalakuntla (nehakalakuntla@brandeis.edu)
+  - Aimuan Erhabor (aimuanerhabor@brandeis.edu)
+  - Jojo Day (jojoday@brandeis.edu)
+  - Elise Keller (elisekeller@brandeis.edu)
+  - Jiayi Zhang (jzhang1166@brandeis.edu)
+- **Github Repository:** https://github.com/sd1166/Tactile-Pad-Project
 
 
 ## 2. Abstract
