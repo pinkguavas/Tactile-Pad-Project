@@ -42,7 +42,6 @@ As detailed as possible.
     The image mapping module has been integrated into the current frontend, and the workflow has been verified with sample images.
 
 ## 4. Progress
-Progress Summary
 
 ### 4.1 Hardware Progress
 - Braille Modules
