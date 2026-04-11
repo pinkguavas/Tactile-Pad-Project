@@ -163,7 +163,12 @@ For the demo, our team presented the current web interface and software workflow
   - Assisted with integrating all components together
 
 ## 9. Conclusion
-Brief reflection on current status, remaining challenges and plans.
+We have made significant progress with software development with fully functional braille to text translation and image mapping. However, the hardware development did not result in a fully functional braille pin module prototype at this time but had a functional LED alternative and components for the braille module available. 
+
+Regarding hardware, a few of our challenges are the assembly of the braille pin module, testing and designing firmware of said module, and seeing if scalability of at least four cells is possible. Another challenge would be the design of the multiple character display and  image display of braille cells, and if not possible then, of LED braille cells. With software mainly complete, challenges involving that would be integrating with the available hardware and making it more accessible for blind people.
+
+Our current plan is to design an image display matrix with LEDs if we are not capable of delivering with all of the goals for the braille. Our most reasonable goal is to create a workable 4 - 8 character braille refreshable tactile display. We are continuing solenoid production in order to begin braille cell production. Once we have a successful prototype, we will work on the greater challenge of scalability with our limited knowledge of circuit design.
+
 
 ## References
 - Inspiration Project: [Electromechanical Refreshable Braille Module](https://hackaday.io/project/191181-electromechanical-refreshable-braille-module)
