@@ -126,14 +126,7 @@ As detail as possible.
 |------|------------|----------|
 
 ### 6.2 Updated Workload Distributions
-- **Image Mapping Module**
-  - Current contribution:
-    - Image upload and tactile mapping pipeline development.
-    - Frontend image integration and testing.
-  
-  - Remaining tasks:
-    - Pico communication integration for image output.
-    - Real hardware testing.
+- Jiayi Zhang: work on frontend to Pico communication for image-based tactile output.
 
 ## 7. Demo Plan
 For the demo, our team presented the current web interface and software workflow. Users were able to upload images, and the system generated binary tactile patterns with browser-based preview.
