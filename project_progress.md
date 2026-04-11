@@ -138,6 +138,30 @@ For the demo, our team presented the current web interface and software workflow
   - Added image upload and tactile preview support in the frontend.
   - Integrated the module into the updated UI and tested with sample images.
 
+- **Aimuan Erhabor**
+  - Assisted with research into materials and methodologies
+  - Assisted with the development of coiling machine with 3D printing and design revision
+  - Designed and created LED representation braille module
+  - Designed firmware to express braille characters through LED module
+
+- **Jojo Day**
+  - Assisted with research into materials and methodologies
+  - Assisted with the design revision of coiling machine
+  - Sourcing hardware materials
+  - 3D Fabrication of braille modules in collaboration with Makerlab
+  - Assisted with integrating all components together
+
+- **Elise Keller**
+  - Implemented Braille to Text Translation
+  - Implemented Visual Simulation of Braille Translation
+  - Designed Software Stack and implemented Web app
+  - Designed functional UI
+
+- **Neha Kalakuntla**
+  - Assisted with research into materials and methodologies
+  - Modified schematic, PCB files, and CAD files
+  - Assisted with integrating all components together
+
 ## 9. Conclusion
 Brief reflection on current status, remaining challenges and plans.
 
