@@ -13,7 +13,7 @@
 
 
 ## 2. Abstract
-Blind and visually impaired individuals face significant economic barriers to accessing information, as current assistive tactile displays range in price from $2,000 to over $50,000. This project proposes a refreshable tactile display designed to be an affordable, DIY alternative for sensing images by translating digital text and simple visual representations into physical tactile patterns. Utilizing a Raspberry Pi Pico and an electromagnetic actuation system, the device will feature a grid of pins that can be raised to provide a tactile representation of maps and images. Key technologies include electromagnets for pin movement, a mechanical locking plate for power-efficient position retention, and a driver board for power management. The goal is to create a functional, scalable prototype that exemplifies a lower-cost solution for navigation, education, and entertainment. 
+Blind and visually impaired individuals face significant economic barriers to accessing information, as current assistive tactile displays range in price from $2,000 to over $50,000. This project proposes a refreshable tactile display designed to be an affordable, DIY alternative for sensing images by translating digital text and simple visual representations into physical tactile patterns. Utilizing a audrino nano and an electromagnetic actuation system, the device will feature a grid of pins that can be raised to provide a tactile representation of maps and images. Key technologies include electromagnets for pin movement, a mechanical locking plate for power-efficient position retention, and a driver board for power management. The goal is to create a functional, scalable prototype that exemplifies a lower-cost solution for navigation, education, and entertainment. 
 
 The primary focus of this project is to address the core mechanical challenge of reliable pin actuation. Unlike expensive piezoelectric commercial displays, we plan to use electromagnets to push pins through a magnetic plate and a sliding locking plate to secure them in the "up" position. We will first develop and validate a single tactile pin module capable of stable upward and downward movement with a locking or holding mechanism. A microcontroller-based control system will manage actuation signals, while a lightweight software layer will convert text input into corresponding dot-matrix tactile patterns.
 
@@ -58,7 +58,7 @@ Users input their desired texts/images to an application. The application will t
 Mechanical actuation:
 
 - Electromagnets + Cam: 
-  - pico sends signal to circuit board
+  - nano sends signal to circuit board
   - circuit board sends power to corresponding electromagnets to be energized
   - electric field causes magnet in cam to flip, moving the cam
   - cam is asymmetric in shape, moving the pins up
@@ -72,7 +72,7 @@ Mechanical actuation:
 - Libraries / Frameworks: Braille Translation([Touch Map](https://pypi.org/project/touchmap/)), Image Converter
 - Communication Protocol: TCP
 - Firmware: Micropython
-- Data flow: image/text → translate to grid pattern → code for pico to follow → pin representation
+- Data flow: image/text → translate to grid pattern → code for nano to follow → pin representation
 - **Image Mapping Module**
   
   The image mapping module allows users to upload images through the web interface and converts them into tactile binary matrices for braille board simulation. 
