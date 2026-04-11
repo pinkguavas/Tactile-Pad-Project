@@ -27,8 +27,53 @@ High-level description of the system.
 As detailed as possible.
 
 ### 3.2 Hardware Components
+| Component | Description | Quantity |
+|---------|-------------|----------|
+| Raspberry Pi Pico W | Main controller | 1 |
+| Circuit Driver Board | Directs power | 1 |
+| Electromagnets | Pin actuation | per pin|
+| PCB | Modulation for each braille letter | per pin |
+| Micromagnets | For magnetic actuation | per letter  |
+|Solenoids | Pin actuation | per pin |
+| Diode | Voltage Control | X |
+| Transistor | Power Switch | X |
+| Resistor | Voltage Control | X |
+
+-Schematic:
+
+Users input their desired texts/images to an application. The application will then calculate a binary map encoding the pins to be actuated on the physical grid. The application will then send the map to the Raspberry Pi Pico. Pico then sends signals for mechanical actuation.
+
+Candidates for mechanical actuation:
+
+- Electromagnets + Cam: 
+  - pico sends signal to circuit board
+  - circuit board sends power to corresponding electromagnets to be energized
+  - electric field causes magnet in cam to flip, moving the cam
+  - cam is asymmetric in shape, moving the pins up
+  - once cam is flipped, power is cut from the electromagnets
+  - supporters on the sides of the cam holds cam and pin in place
+  - to refresh, a signal is sent once again to corresponding
+	  electromagnets, flipping the cam once again
+
+
+- Electromagnets + Locking Plate:
+	- pico sends signal to circuit board
+	- circuit board sends power to corresponding electromagnets to be energized
+	- once electromagnets energized, pins connected to magnets move upwards
+	- pins have groves on the sides which then are locked in place by a sliding plate with slightly larger holes to fit in the grooves
+  - to refresh the locking plate will slide back to the original position to release all locked pins
+
+- Solenoids:
+  - each solenoid connected to the pico by an available pin position
+  - pico will signal the solenoid of the respective number placement a charge if pin assigned to solenoid is charged
+  - the activated solenoids will either push up  or push down if already in pushed up stance
 
 ### 3.3 Software Components
+- Libraries / Frameworks: Braille Translation([Touch Map](https://pypi.org/project/touchmap/)), Image Converter
+- Communication Protocol: TCP
+- Firmware: Micropython
+- Data flow: image/text → translate to grid pattern → code for pico to follow → pin representation
+- User interface: Frontend(tbd), Backend(tbd), Database(tbd)
 - **Image Mapping Module**
   
   The image mapping module allows users to upload images through the web interface and converts them into tactile binary matrices for braille board simulation. 
