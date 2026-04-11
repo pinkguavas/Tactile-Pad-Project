@@ -120,16 +120,35 @@ Candidates for mechanical actuation:
 
 ## 6. Updated Plans
 
+With the development of having LED braille cell representations, we are incorporating that development into our project to see what can be done with scalability of the actual braille module and what can’t be completed in the time scope of the budget. Given time constraints we might not get the chance to implement our modifications to our original inspiration project however we have developed our own designs in preparation.
+Regarding the power source considerations for a full image display or a braille cell array, we plan to use an outlet source or a rechargeable power battery to distribute the power necessary. It will be less costly for the LED display but it is more necessary once we achieve any multiple braille cell display.
+
 ### 6.1 Updated Timeline
 As detail as possible.
 | Phase | Activities | Duration |
 |------|------------|----------|
 
 ### 6.2 Updated Workload Distributions
-- Jiayi Zhang: work on frontend to Pico communication for image-based tactile output.
+- Neha Kalakuntla - Hardware
+- Aimuan Erhabor - Firmware, Hardware, Prototyping
+- Jojo Day - Hardware, Fullstack/Embedded Software 
+- Elise Keller -  Fullstack Software
+- Jiayi Zhang -  Fullstack Software
 
 ## 7. Demo Plan
 For the demo, our team presented the current web interface and software workflow. Users were able to upload images, and the system generated binary tactile patterns with browser-based preview.
+
+For our live demo we plan on showcasing all of the features we have implemented including:
+  - Text to braille actuation on the pad
+  - Image Conversion to dot representation on LED display
+  - Refresh capabilities
+  - Physical model of the tactile visual display (without the matrix working because we might not have the time to wind 96 solenoids)
+
+We will use a sample text or article to display the text to braille conversion for the braille display. 
+We may have accompanying slides or text to show how well the display and braille conversion translate the text for audience visibility.
+
+Once that sequence is done, we will transfer to the image display presentation with cultivated images that can transfer to the available image display resolution of either 4 by 4 or 8 by 8.
+If we do not have a working image display, we can always display the preview to show that we have a working conversion for future features. 
 
 ## 8. Contributions
 - **Jiayi Zhang**
