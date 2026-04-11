@@ -30,18 +30,15 @@ As detailed as possible.
 ### 3.3 Software Components
 - **Image Mapping Module**
   
-  The image mapping module allows users to upload images through the web interface and converts them into tactile binary matrices suitable for braille board rendering. 
-  - Main functions implemented:
+  The image mapping module allows users to upload images through the web interface and converts them into tactile binary matrices for braille board simulation. 
+  - Main functions:
     - Image upload handling through the frontend interface.
-    - Backend image reception and file processing.
-    - Automatic image resizing based on board resolution.
-    - Grayscale conversion and threshold-based binarization.
-    - Generation of binary tactile mapping matrices.
-    - Frontend tactile preview rendering for visualization.
-  
-  - Current integration
+    - Automatic resizing based on board size.
+    - Grayscale conversion and threshold binarization.
+    - Binary tactile matrix generation.
+    - Frontend tactile preview display.
 
-    The image mapping module has been successfully integrated into the latest frontend interface and supports real-time simulation display.
+    The image mapping module has been integrated into the current frontend, and the workflow has been verified with sample images.
 
 ## 4. Progress
 Progress Summary
@@ -49,10 +46,25 @@ Progress Summary
 ### 4.1 Hardware Progress
 
 ### 4.2 Software Progress
+- **Image Mapping Progress**
+
+  The image mapping module is now functional in the current frontend.
+  
+  - Current status:
+    - Users can upload images and preview tactile mapping results.
+    - Image resizing and threshold conversion are working properly.
+    - The module has been tested using sample images.
 
 ### 4.3 Current Results
+- The current system can generate tactile binary matrices from uploaded images and display the output in the browser.
 
 ## 5. Challenges and Solutions
+- **Image Mapping Module**
+
+  - Challenge 1: Uploaded images had different resolutions and could not be directly mapped to the tactile board.
+  - Solution: An automatic resizing machanism was implemented to normalize uploaded images based on the board resolution before thresholding.
+  - Challenge 2: The frontend structure was changed during development, so the previous image mapping logic no longer fit the new interface structure.
+  - Solution: The image upload and preview logic were adjusted to match the new frontend structure while keeping the original image processing flow.
 
 ## 6. Updated Plans
 
@@ -62,13 +74,24 @@ As detail as possible.
 |------|------------|----------|
 
 ### 6.2 Updated Workload Distributions
-
+- **Image Mapping Module**
+  - Current contribution:
+    - Image upload and tactile mapping pipeline development.
+    - Frontend image integration and testing.
+  
+  - Remaining tasks:
+    - Pico communication integration for image output.
+    - Real hardware testing.
 
 ## 7. Demo Plan
-Explain your live demonstration plan in details
+For the demo, our team presented the current web interface and software workflow. Users were able to upload images, and the system generated binary tactile patterns with browser-based preview.
 
 ## 8. Contributions
-List each member's contributions so far.
+- **Jiayi Zhang**
+  - Designed and implemented the image-to-tactile mapping module.
+  - Built image preprocessing functions, including resizing and threshold binariztion.
+  - Added image upload and tactile preview support in the frontend.
+  - Integrated the module into the updated UI and tested with sample images.
 
 ## 9. Conclusion
 Brief reflection on current status, remaining challenges and plans.
