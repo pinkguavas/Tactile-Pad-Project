@@ -86,25 +86,40 @@
                                 <span class="card-meta" id="previewCount">0 items</span>
                             </div>
 
-                            <div class="preview-toggle" role="tablist" aria-label="Preview mode">
+                            <div class="preview-header-actions">
                                 <button
                                     type="button"
-                                    class="toggle-btn active"
-                                    id="detailModeBtn"
-                                    onclick="setPreviewMode('detail')"
+                                    class="btn btn-secondary btn-compact"
+                                    id="mainContinueTextBtn"
+                                    onclick="showNextPanelTextPage()"
+                                    hidden
                                 >
-                                    Detailed
+                                    Continue Text
                                 </button>
-                                <button
-                                    type="button"
-                                    class="toggle-btn"
-                                    id="lineModeBtn"
-                                    onclick="setPreviewMode('line')"
-                                >
-                                    Line View
-                                </button>
+                                <div class="preview-toggle" role="tablist" aria-label="Preview mode">
+                                    <button
+                                        type="button"
+                                        class="toggle-btn active"
+                                        id="detailModeBtn"
+                                        onclick="setPreviewMode('detail')"
+                                    >
+                                        Detailed
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="toggle-btn"
+                                        id="lineModeBtn"
+                                        onclick="setPreviewMode('line')"
+                                    >
+                                        Line View
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
+                        <p class="helper-text simulation-pagination-note" id="panelPaginationNote">
+                            The detailed preview and LEDs show at most the first 22 typed characters per view. Continue Text reveals the next 22 characters, and so on.
+                        </p>
 
                         <div id="preview" class="preview-empty">
                             No preview generated yet.
@@ -303,6 +318,8 @@
         const previewEl = document.getElementById("preview");
         const previewCountEl = document.getElementById("previewCount");
         const textInputEl = document.getElementById("textInput");
+        const mainContinueTextBtnEl = document.getElementById("mainContinueTextBtn");
+        const panelPaginationNoteEl = document.getElementById("panelPaginationNote");
         const detailModeBtn = document.getElementById("detailModeBtn");
         const lineModeBtn = document.getElementById("lineModeBtn");
 
@@ -341,6 +358,14 @@
         let previewMode = "detail";
         let activeAppTab = "main";
         let latestPatterns = [];
+
+        let panelDisplayText = "";
+        /** True only when input length is over 22 characters (paginated WS2812 mode). */
+        let panelPagingLongMessage = false;
+        let panelDisplayPage = 0;
+        let panelHasMore = false;
+        let panelTotalPages = 1;
+        const MAIN_WS2812_FULL_TEXT_MAX_CHARS = 22;
         let simulationInputMode = "text";
 
         const TEXT_MODE_DEFAULTS = {
@@ -362,6 +387,15 @@
             gapCapReferenceRows: 20,
             gapCapReferenceCols: 20
         };
+
+        // BRAILLE_MAP uses dot order 1..6 (left column then right). CSS grid fills row-by-row.
+        const BRAILLE_DOT_ORDER_TO_GRID = [0, 3, 1, 4, 2, 5];
+        const BRAILLE_GRID_DOT_NUMBERS = [1, 4, 2, 5, 3, 6];
+
+        function patternBitsForGrid(pattern) {
+            const s = String(pattern || "000000").padEnd(6, "0").slice(0, 6);
+            return BRAILLE_DOT_ORDER_TO_GRID.map((i) => s[i]);
+        }
 
         const simulationState = {
             rows: TEXT_MODE_DEFAULTS.rows,
@@ -445,14 +479,14 @@
 
         function renderBrailleCell(pattern, extraClass = "") {
             const safePattern = String(pattern || "000000").padEnd(6, "0").slice(0, 6);
-            const dots = safePattern.split("");
+            const bits = patternBitsForGrid(safePattern);
 
             return `
                 <div class="braille-cell ${extraClass}" aria-label="Braille pattern ${safePattern}">
-                    ${dots.map((bit, index) => `
+                    ${bits.map((bit, index) => `
                         <span
                             class="dot ${bit === "1" ? "raised" : ""}"
-                            data-dot="${index + 1}"
+                            data-dot="${BRAILLE_GRID_DOT_NUMBERS[index]}"
                             aria-hidden="true"
                         ></span>
                     `).join("")}
@@ -725,7 +759,8 @@
                 simulationBoardSizeMetaEl.textContent = `${simulationState.rows} rows × ${simulationState.cols} chars`;
                 simulationPreviewCountEl.textContent = `${totalSlots} character slot${totalSlots === 1 ? "" : "s"}`;
             } else {
-                const totalDots = simulationState.rows * simulationState.cols;
+                const totalDots =
+                    simulationState.rows * simulationState.cols;
                 simulationBoardSizeMetaEl.textContent = `${simulationState.rows} rows × ${simulationState.cols} cols`;
                 simulationPreviewCountEl.textContent = `${totalDots} dot${totalDots === 1 ? "" : "s"}`;
             }
@@ -765,7 +800,7 @@
 
         function createBrailleCharCell(pattern) {
             const safePattern = String(pattern || "000000").padEnd(6, "0").slice(0, 6);
-            const dots = safePattern.split("");
+            const dots = patternBitsForGrid(safePattern);
 
             const charCell = document.createElement("div");
             charCell.className = "simulation-char-cell";
@@ -916,13 +951,13 @@
             simulationBoardEl.style.width = "100%";
             simulationBoardEl.style.height = "100%";
 
-            const rows = simulationState.imageRows || [];
+            const rowsData = simulationState.imageRows || [];
             const rowCount = simulationState.rows;
             const colCount = simulationState.cols;
             const fragment = document.createDocumentFragment();
 
             for (let r = 0; r < rowCount; r += 1) {
-                const currentRow = Array.isArray(rows[r]) ? rows[r] : [];
+                const currentRow = Array.isArray(rowsData[r]) ? rowsData[r] : [];
 
                 for (let c = 0; c < colCount; c += 1) {
                     const value = currentRow[c] === 1 ? 1 : 0;
@@ -1097,19 +1132,56 @@
             setStatus("Simulation board reset to default.", "success");
         }
 
-        async function fetchBraillePatterns(text) {
+        function updatePanelPaginationUI() {
+            if (!panelDisplayText.trim()) {
+                mainContinueTextBtnEl.hidden = true;
+                panelPaginationNoteEl.textContent =
+                    "The detailed preview shows at most 22 typed characters per view (matching the LEDs). Continue Text reveals the following characters.";
+                return;
+            }
+            if (!panelPagingLongMessage) {
+                mainContinueTextBtnEl.hidden = true;
+                panelPaginationNoteEl.textContent =
+                    `Showing all ${panelDisplayText.length} character${panelDisplayText.length === 1 ? "" : "s"} (limit ${MAIN_WS2812_FULL_TEXT_MAX_CHARS}).`;
+                return;
+            }
+            if (panelHasMore) {
+                mainContinueTextBtnEl.hidden = false;
+                panelPaginationNoteEl.textContent =
+                    `View ${panelDisplayPage + 1} of ${panelTotalPages}: up to ${MAIN_WS2812_FULL_TEXT_MAX_CHARS} typed characters of your input. Continue Text loads the next block.`;
+                return;
+            }
+            mainContinueTextBtnEl.hidden = true;
+            panelPaginationNoteEl.textContent =
+                `Final view (${panelDisplayPage + 1} of ${panelTotalPages}).`;
+        }
+
+        async function fetchBraillePatterns(text, options = {}) {
+            const page = Number.isInteger(options.page) ? options.page : 0;
+            const paginate = options.paginate !== false;
             const response = await fetch("/display", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text, page, paginate })
             });
 
-            if (!response.ok) {
-                throw new Error(`Display request failed with status ${response.status}`);
-            }
+            const data = await response.json().catch(() => ({}));
 
-            const data = await response.json();
-            return Array.isArray(data.patterns) ? data.patterns : [];
+            if (!response.ok) {
+                const msg =
+                    (data && data.message) ||
+                    `Display request failed (HTTP ${response.status})`;
+                throw new Error(msg);
+            }
+            if (data.status === "error" && data.message) {
+                throw new Error(data.message);
+            }
+            return {
+                patterns: Array.isArray(data.patterns) ? data.patterns : [],
+                page: Number.isInteger(data.page) ? data.page : page,
+                total_pages: Number.isInteger(data.total_pages) ? data.total_pages : 1,
+                has_more: Boolean(data.has_more),
+            };
         }
 
         async function uploadImageForSimulation(file) {
@@ -1163,8 +1235,10 @@
                         ? data.target_width
                         : (rawRows[0] ? rawRows[0].length : 0);
 
-                    simulationState.rows = targetHeight > 0 ? targetHeight : simulationState.rows;
-                    simulationState.cols = targetWidth > 0 ? targetWidth : simulationState.cols;
+                    simulationState.rows =
+                        targetHeight > 0 ? targetHeight : simulationState.rows;
+                    simulationState.cols =
+                        targetWidth > 0 ? targetWidth : simulationState.cols;
 
                     boardRowsInputEl.value = simulationState.rows;
                     boardColsInputEl.value = simulationState.cols;
@@ -1213,7 +1287,7 @@
             try {
                 setStatus("Rendering text on the large simulation board...", "loading");
 
-                const patterns = await fetchBraillePatterns(text);
+                const { patterns } = await fetchBraillePatterns(text, { paginate: false });
                 simulationState.textPatterns = patterns;
                 simulationState.textOffset = 0;
                 simulationDisplayMetaEl.textContent = "Text Rendered";
@@ -1267,21 +1341,76 @@
             const text = textInputEl.value.trim();
 
             if (!text) {
+                panelDisplayText = "";
+                panelPagingLongMessage = false;
+                panelDisplayPage = 0;
+                panelHasMore = false;
+                panelTotalPages = 1;
                 setStatus("Please enter text before displaying.", "warning");
                 renderPreview([]);
+                updatePanelPaginationUI();
                 return;
             }
 
             try {
                 setStatus("Sending text to board...", "loading");
 
-                const patterns = await fetchBraillePatterns(text);
+                const usePagination =
+                    text.length > MAIN_WS2812_FULL_TEXT_MAX_CHARS;
+                panelPagingLongMessage = usePagination;
+
+                const { patterns, page, total_pages, has_more } = await fetchBraillePatterns(
+                    text,
+                    { page: 0, paginate: usePagination }
+                );
+                panelDisplayText = text;
+                panelDisplayPage = page;
+                panelTotalPages = total_pages;
+                panelHasMore = has_more;
 
                 renderPreview(patterns);
+                updatePanelPaginationUI();
                 setStatus("Text displayed successfully.", "success");
             } catch (error) {
                 console.error(error);
-                setStatus("Failed to display text on the board.", "error");
+                setStatus(
+                    (error && error.message) || "Failed to display text on the board.",
+                    "error"
+                );
+            }
+        }
+
+        async function showNextPanelTextPage() {
+            if (
+                !panelPagingLongMessage ||
+                !panelDisplayText.trim() ||
+                !panelHasMore
+            ) {
+                updatePanelPaginationUI();
+                return;
+            }
+
+            try {
+                const nextPage = panelDisplayPage + 1;
+                setStatus("Showing next LED page...", "loading");
+                const {
+                    patterns,
+                    page,
+                    total_pages,
+                    has_more,
+                } = await fetchBraillePatterns(panelDisplayText, { page: nextPage, paginate: true });
+                panelDisplayPage = page;
+                panelTotalPages = total_pages;
+                panelHasMore = has_more;
+                renderPreview(patterns);
+                updatePanelPaginationUI();
+                setStatus("Displayed next text page on panel.", "success");
+            } catch (error) {
+                console.error(error);
+                setStatus(
+                    (error && error.message) || "Failed to display next text page.",
+                    "error"
+                );
             }
         }
 
@@ -1298,7 +1427,13 @@
                 }
 
                 textInputEl.value = "";
+                panelDisplayText = "";
+                panelPagingLongMessage = false;
+                panelDisplayPage = 0;
+                panelHasMore = false;
+                panelTotalPages = 1;
                 renderPreview([]);
+                updatePanelPaginationUI();
                 setStatus("Board reset successfully.", "success");
             } catch (error) {
                 console.error(error);
@@ -1319,7 +1454,13 @@
                 }
 
                 textInputEl.value = "";
+                panelDisplayText = "";
+                panelPagingLongMessage = false;
+                panelDisplayPage = 0;
+                panelHasMore = false;
+                panelTotalPages = 1;
                 renderPreview([]);
+                updatePanelPaginationUI();
                 setStatus("Board cleared successfully.", "success");
             } catch (error) {
                 console.error(error);
@@ -1361,6 +1502,7 @@
 
         updateSimulationControlsForMode();
         buildSimulationBoard();
+        updatePanelPaginationUI();
     </script>
 </body>
 </html>
