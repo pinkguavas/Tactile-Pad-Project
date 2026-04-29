@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
 from braille import translate_text
 from fake_board import send_to_board, reset_board, clear_board
@@ -108,3 +109,25 @@ def clear():
 
 if __name__ == "__main__":
     app.run(debug=True)
+=======
+"""Backward-compatible entry point for the Flask app.
+
+Prefer ``pip install -e .`` then ``flask --app tactile.app run`` or ``python -m tactile``.
+"""
+
+from pathlib import Path
+import sys
+
+_SRC_ROOT = Path(__file__).resolve().parent / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
+from tactile.app import app
+
+__all__ = ["app"]
+
+if __name__ == "__main__":
+    # use_reloader=False avoids two processes fighting over the USB serial port
+    app.run(debug=True, use_reloader=False)
+
+>>>>>>> 16927c1 (added configuration for led and image mapping functionality)
