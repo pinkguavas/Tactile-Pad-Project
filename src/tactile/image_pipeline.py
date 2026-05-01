@@ -228,8 +228,8 @@ def print_braille_rows(rows):
 
 def process_image(
     image_path,
-    target_width=None,
-    target_height=None,
+    target_width=DEFAULT_TARGET_WIDTH,
+    target_height=DEFAULT_TARGET_WIDTH,
     threshold=DEFAULT_THRESHOLD,
 ):
     img = load_image(image_path)
