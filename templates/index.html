@@ -57,23 +57,65 @@
                 role="tabpanel"
                 aria-labelledby="mainTabBtn"
             >
-                <section class="control-group">
-                    <label for="textInput" class="input-label">Text Input</label>
-                    <div class="input-row">
-                        <input
-                            id="textInput"
-                            type="text"
-                            placeholder="Enter text to display on the tactile board"
-                            maxlength="120"
-                        />
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Main Input</h2>
+                        <span class="card-meta" id="mainInputModeMeta">Text Mode</span>
                     </div>
-                    <p class="helper-text">
-                        Supports letters, numbers, punctuation, capital indicators, and number indicators.
-                    </p>
-                </section>
+                    <section class="control-group">
+                        <label class="input-label">Choose Input Type</label>
+                        <div class="segmented-control" role="tablist" aria-label="Main input type">
+                            <button
+                                type="button"
+                                class="segment-btn active"
+                                id="mainTextModeBtn"
+                                onclick="setMainInputMode('text')"
+                            >
+                                Text
+                            </button>
+                            <button
+                                type="button"
+                                class="segment-btn"
+                                id="mainImageModeBtn"
+                                onclick="setMainInputMode('image')"
+                            >
+                                Image
+                            </button>
+                        </div>
+                    </section>
+
+                    <section id="mainTextInputSection" class="control-group">
+                        <label for="textInput" class="input-label">Text Input</label>
+                        <div class="input-row">
+                            <input
+                                id="textInput"
+                                type="text"
+                                placeholder="Enter text to display on the tactile board"
+                                maxlength="120"
+                            />
+                        </div>
+                        <p class="helper-text">
+                            Supports letters, numbers, punctuation, capital indicators, and number indicators.
+                        </p>
+                    </section>
+
+                    <section id="mainImageInputSection" class="control-group" hidden>
+                        <label for="mainImageInput" class="input-label">Image Upload</label>
+                        <div class="input-row">
+                            <input
+                                id="mainImageInput"
+                                type="file"
+                                accept="image/*"
+                            />
+                        </div>
+                        <p class="helper-text">
+                            Upload an image to render directly onto the 16x16 LED panel.
+                        </p>
+                    </section>
+                </div>
 
                 <section class="action-group">
-                    <button class="btn btn-primary" onclick="sendText()">Display</button>
+                    <button class="btn btn-primary" onclick="renderMainInput()">Display</button>
                     <button class="btn btn-secondary" onclick="resetBoard()">Reset</button>
                     <button class="btn btn-ghost" onclick="clearBoard()">Clear</button>
                 </section>
@@ -96,7 +138,7 @@
                                 >
                                     Continue Text
                                 </button>
-                                <div class="preview-toggle" role="tablist" aria-label="Preview mode">
+                                <div class="preview-toggle" id="mainPreviewToggle" role="tablist" aria-label="Preview mode">
                                     <button
                                         type="button"
                                         class="toggle-btn active"
@@ -318,6 +360,13 @@
         const previewEl = document.getElementById("preview");
         const previewCountEl = document.getElementById("previewCount");
         const textInputEl = document.getElementById("textInput");
+        const mainImageInputEl = document.getElementById("mainImageInput");
+        const mainTextModeBtnEl = document.getElementById("mainTextModeBtn");
+        const mainImageModeBtnEl = document.getElementById("mainImageModeBtn");
+        const mainInputModeMetaEl = document.getElementById("mainInputModeMeta");
+        const mainTextInputSectionEl = document.getElementById("mainTextInputSection");
+        const mainImageInputSectionEl = document.getElementById("mainImageInputSection");
+        const mainPreviewToggleEl = document.getElementById("mainPreviewToggle");
         const mainContinueTextBtnEl = document.getElementById("mainContinueTextBtn");
         const panelPaginationNoteEl = document.getElementById("panelPaginationNote");
         const detailModeBtn = document.getElementById("detailModeBtn");
@@ -366,6 +415,9 @@
         let panelHasMore = false;
         let panelTotalPages = 1;
         const MAIN_WS2812_FULL_TEXT_MAX_CHARS = 22;
+        let mainInputMode = "text";
+        let mainImagePreviewRows = [];
+        let mainImagePreviewMeta = {};
         let simulationInputMode = "text";
 
         const TEXT_MODE_DEFAULTS = {
@@ -374,8 +426,8 @@
         };
 
         const IMAGE_MODE_DEFAULTS = {
-            rows: 6,
-            cols: 6
+            rows: 16,
+            cols: 16
         };
 
         const IMAGE_SIZING = {
@@ -474,7 +526,31 @@
             detailModeBtn.classList.toggle("active", mode === "detail");
             lineModeBtn.classList.toggle("active", mode === "line");
 
-            renderPreview(latestPatterns);
+            if (mainInputMode === "image") {
+                renderMainImagePreview(mainImagePreviewRows, mainImagePreviewMeta);
+            } else {
+                renderPreview(latestPatterns);
+            }
+        }
+
+        function setMainInputMode(mode) {
+            const isText = mode === "text";
+            mainInputMode = isText ? "text" : "image";
+
+            mainTextModeBtnEl.classList.toggle("active", isText);
+            mainImageModeBtnEl.classList.toggle("active", !isText);
+            mainInputModeMetaEl.textContent = isText ? "Text Mode" : "Image Mode";
+
+            mainTextInputSectionEl.hidden = !isText;
+            mainImageInputSectionEl.hidden = isText;
+            mainPreviewToggleEl.hidden = false;
+
+            panelDisplayText = "";
+            panelPagingLongMessage = false;
+            panelDisplayPage = 0;
+            panelHasMore = false;
+            panelTotalPages = 1;
+            updatePanelPaginationUI();
         }
 
         function renderBrailleCell(pattern, extraClass = "") {
@@ -558,6 +634,90 @@
             }
         }
 
+        function renderMainImagePreview(rows = [], meta = {}) {
+            const safeRows = Array.isArray(rows) ? rows : [];
+            if (!safeRows.length) {
+                previewEl.className = "preview-empty";
+                previewEl.innerHTML = "No preview generated yet.";
+                previewCountEl.textContent = "0 items";
+                return;
+            }
+
+            const sourceWidth = Number.isInteger(meta.target_width) ? meta.target_width : (safeRows[0] ? safeRows[0].length : 0);
+            const sourceHeight = Number.isInteger(meta.target_height) ? meta.target_height : safeRows.length;
+            const threshold = Number.isInteger(meta.threshold) ? meta.threshold : "N/A";
+            const panelWidth = 16;
+            const panelHeight = 16;
+
+            const panelRows = [];
+            for (let y = 0; y < panelHeight; y += 1) {
+                const sourceRow = Array.isArray(safeRows[y]) ? safeRows[y] : [];
+                const panelRow = [];
+                for (let x = 0; x < panelWidth; x += 1) {
+                    panelRow.push(sourceRow[x] === 1 ? 1 : 0);
+                }
+                panelRows.push(panelRow);
+            }
+
+            const htmlRows = panelRows.map((row) => `
+                <div style="display:flex; gap:6px; flex-wrap:nowrap;">
+                    ${row.map((value) => `
+                        <span
+                            style="
+                                width:20px;
+                                height:20px;
+                                display:inline-flex;
+                                align-items:center;
+                                justify-content:center;
+                                border-radius:6px;
+                                font-size:11px;
+                                font-weight:600;
+                                background:${value === 1 ? "#111" : "#e9ecef"};
+                                color:${value === 1 ? "#fff" : "#333"};
+                            "
+                        >${escapeHtml(value)}</span>
+                    `).join("")}
+                </div>
+            `).join("");
+
+            const lineViewDots = panelRows
+                .flatMap((row) => row)
+                .map((value) => `
+                    <span class="simulation-dot ${value === 1 ? "active" : ""}" aria-hidden="true"></span>
+                `)
+                .join("");
+
+            previewEl.className = "preview-content";
+            previewEl.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:14px;">
+                        <span><strong>Source:</strong> ${escapeHtml(sourceWidth)} x ${escapeHtml(sourceHeight)}</span>
+                        <span><strong>Panel Preview:</strong> 16 x 16</span>
+                        <span><strong>Threshold:</strong> ${escapeHtml(threshold)}</span>
+                    </div>
+                    ${
+                        previewMode === "line"
+                            ? `
+                                <div class="simulation-board simulation-board-image" style="
+                                    width:max-content;
+                                    height:auto;
+                                    grid-template-columns: repeat(16, var(--simulation-image-dot-size));
+                                    grid-template-rows: repeat(16, var(--simulation-image-dot-size));
+                                ">
+                                    ${lineViewDots}
+                                </div>
+                            `
+                            : `
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    ${htmlRows}
+                                </div>
+                            `
+                    }
+                </div>
+            `;
+            previewCountEl.textContent = "256 LEDs";
+        }
+
         function renderSimulationDetailPreview(patterns = []) {
             if (simulationInputMode !== "text") {
                 simulationDetailSectionEl.hidden = false;
@@ -575,12 +735,23 @@
                 const width = meta.target_width ?? "N/A";
                 const height = meta.target_height ?? "N/A";
                 const threshold = meta.threshold ?? "N/A";
+                const boardRows = Math.max(1, simulationState.rows);
+                const boardCols = Math.max(1, simulationState.cols);
 
-                const htmlRows = imageRows.map(row => {
-                    const safeRow = Array.isArray(row) ? row : [];
+                const boardMatrix = [];
+                for (let r = 0; r < boardRows; r += 1) {
+                    const sourceRow = Array.isArray(imageRows[r]) ? imageRows[r] : [];
+                    const row = [];
+                    for (let c = 0; c < boardCols; c += 1) {
+                        row.push(sourceRow[c] === 1 ? 1 : 0);
+                    }
+                    boardMatrix.push(row);
+                }
+
+                const htmlRows = boardMatrix.map(row => {
                     return `
                         <div style="display:flex; gap:6px; flex-wrap:nowrap;">
-                            ${safeRow.map(value => `
+                            ${row.map(value => `
                                 <span
                                     style="
                                         width:22px;
@@ -604,8 +775,8 @@
                 simulationDetailPreviewEl.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:16px;">
                         <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:14px;">
-                            <span><strong>Width:</strong> ${escapeHtml(width)}</span>
-                            <span><strong>Height:</strong> ${escapeHtml(height)}</span>
+                            <span><strong>Source:</strong> ${escapeHtml(width)} x ${escapeHtml(height)}</span>
+                            <span><strong>Board:</strong> ${escapeHtml(boardCols)} x ${escapeHtml(boardRows)}</span>
                             <span><strong>Threshold:</strong> ${escapeHtml(threshold)}</span>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -613,7 +784,7 @@
                         </div>
                     </div>
                 `;
-                simulationDetailCountEl.textContent = `${imageRows.length} row${imageRows.length === 1 ? "" : "s"}`;
+                simulationDetailCountEl.textContent = `${boardRows} row${boardRows === 1 ? "" : "s"}`;
                 return;
             }
 
@@ -1133,6 +1304,12 @@
         }
 
         function updatePanelPaginationUI() {
+            if (mainInputMode !== "text") {
+                mainContinueTextBtnEl.hidden = true;
+                panelPaginationNoteEl.textContent =
+                    "Image mode uses the uploaded pixel matrix directly.";
+                return;
+            }
             if (!panelDisplayText.trim()) {
                 mainContinueTextBtnEl.hidden = true;
                 panelPaginationNoteEl.textContent =
@@ -1184,22 +1361,72 @@
             };
         }
 
-        async function uploadImageForSimulation(file) {
+        async function uploadImage(file, options = {}) {
             const formData = new FormData();
             formData.append("image", file);
+            if (options.sendToLed === false) {
+                formData.append("send_to_led", "0");
+            }
+            const endpoint = options.endpoint || "/upload_image";
 
-            const response = await fetch("/upload_image", {
+            const response = await fetch(endpoint, {
                 method: "POST",
                 body: formData
             });
 
-            const data = await response.json();
+            const bodyText = await response.text();
+            let data = null;
+            try {
+                data = JSON.parse(bodyText);
+            } catch (_err) {
+                if (!response.ok) {
+                    throw new Error(
+                        `Image upload failed (HTTP ${response.status}) at ${endpoint}. ` +
+                        "The server returned non-JSON output. Restart the Flask app and try again."
+                    );
+                }
+                throw new Error(
+                    `Image upload response from ${endpoint} was not valid JSON. Restart the Flask app and try again.`
+                );
+            }
 
             if (!response.ok || data.status !== "ok") {
                 throw new Error(data.message || `Image upload failed with status ${response.status}`);
             }
 
             return data;
+        }
+
+        async function renderMainInput() {
+            if (mainInputMode === "image") {
+                const file = mainImageInputEl.files && mainImageInputEl.files[0];
+                if (!file) {
+                    setStatus("Please select an image before displaying.", "warning");
+                    return;
+                }
+                try {
+                    setStatus("Uploading image and rendering it on the LED panel...", "loading");
+                    const data = await uploadImage(file, { sendToLed: true });
+                    mainImagePreviewRows = Array.isArray(data.rows) ? data.rows : [];
+                    mainImagePreviewMeta = data || {};
+                    renderMainImagePreview(data.rows, data);
+                    panelDisplayText = "";
+                    panelPagingLongMessage = false;
+                    panelDisplayPage = 0;
+                    panelHasMore = false;
+                    panelTotalPages = 1;
+                    updatePanelPaginationUI();
+                    setStatus("Image displayed successfully.", "success");
+                } catch (error) {
+                    console.error(error);
+                    setStatus(
+                        (error && error.message) || "Failed to render the uploaded image.",
+                        "error"
+                    );
+                }
+                return;
+            }
+            await sendText();
         }
 
         async function renderSimulationInput() {
@@ -1224,7 +1451,10 @@
                 try {
                     setStatus("Uploading image and converting it for the simulation board...", "loading");
 
-                    const data = await uploadImageForSimulation(file);
+                    const data = await uploadImage(file, {
+                        sendToLed: false,
+                        endpoint: "/upload_image_simulation"
+                    });
                     const rawRows = Array.isArray(data.rows) ? data.rows : [];
 
                     const targetHeight = Number.isInteger(data.target_height)
@@ -1235,13 +1465,14 @@
                         ? data.target_width
                         : (rawRows[0] ? rawRows[0].length : 0);
 
-                    simulationState.rows =
-                        targetHeight > 0 ? targetHeight : simulationState.rows;
-                    simulationState.cols =
-                        targetWidth > 0 ? targetWidth : simulationState.cols;
-
-                    boardRowsInputEl.value = simulationState.rows;
-                    boardColsInputEl.value = simulationState.cols;
+                    if (targetHeight > simulationState.rows || targetWidth > simulationState.cols) {
+                        simulationDisplayMetaEl.textContent = "Image Too Large";
+                        setStatus(
+                            `Image is ${targetHeight} x ${targetWidth}, but board is ${simulationState.rows} x ${simulationState.cols}. Increase board size or upload a smaller image.`,
+                            "warning"
+                        );
+                        return;
+                    }
 
                     simulationState.imageRows = rawRows.map(row => {
                         const safeRow = Array.isArray(row) ? row : [];
@@ -1260,11 +1491,15 @@
 
                     updateSimulationControlsForMode();
                     buildImageSimulationBoard();
-                    setStatus("Image converted and rendered successfully.", "success");
+                    setStatus("Image simulated on the large board preview.", "success");
                 } catch (error) {
                     console.error(error);
                     simulationDisplayMetaEl.textContent = "Error";
-                    setStatus("Failed to render the uploaded image.", "error");
+                    const message =
+                        (error && error.message)
+                            ? `Failed to render the uploaded image: ${error.message}`
+                            : "Failed to render the uploaded image.";
+                    setStatus(message, "error");
                 }
 
                 return;
@@ -1427,6 +1662,9 @@
                 }
 
                 textInputEl.value = "";
+                if (mainImageInputEl) {
+                    mainImageInputEl.value = "";
+                }
                 panelDisplayText = "";
                 panelPagingLongMessage = false;
                 panelDisplayPage = 0;
@@ -1454,6 +1692,9 @@
                 }
 
                 textInputEl.value = "";
+                if (mainImageInputEl) {
+                    mainImageInputEl.value = "";
+                }
                 panelDisplayText = "";
                 panelPagingLongMessage = false;
                 panelDisplayPage = 0;
@@ -1484,6 +1725,17 @@
             setStatus("Image selected. Click Render on Board to convert it.", "idle");
         });
 
+        mainImageInputEl.addEventListener("change", function () {
+            if (mainInputMode !== "image") {
+                return;
+            }
+            const file = mainImageInputEl.files && mainImageInputEl.files[0];
+            if (!file) {
+                return;
+            }
+            setStatus("Image selected. Click Display to render it on the LED panel.", "idle");
+        });
+
         const simulationResizeObserver = new ResizeObserver(() => {
             if (simulationInputMode === "jpg") {
                 updateImageLimitDisplay();
@@ -1500,6 +1752,7 @@
             }
         });
 
+        setMainInputMode("text");
         updateSimulationControlsForMode();
         buildSimulationBoard();
         updatePanelPaginationUI();

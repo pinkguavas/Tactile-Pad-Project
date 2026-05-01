@@ -66,6 +66,55 @@ def _get_serial():
     return _ser
 
 
+def _close_serial():
+    global _ser
+    if _ser is None:
+        return
+    try:
+        _ser.close()
+    except Exception:
+        pass
+    _ser = None
+
+
+def _should_retry_serial_write(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    reconnect_signals = (
+        "device not configured",
+        "i/o error",
+        "input/output error",
+        "broken pipe",
+        "bad file descriptor",
+        "device disconnected",
+        "resource temporarily unavailable",
+    )
+    return any(signal in msg for signal in reconnect_signals)
+
+
+def _write_bytes_with_reconnect(data: bytes):
+    """
+    Write bytes to serial and retry once after reconnect on transient USB failures.
+    """
+    global _ser
+    try:
+        ser = _get_serial()
+        ser.write(data)
+        ser.flush()
+        return
+    except Exception as first_error:
+        if not _should_retry_serial_write(first_error):
+            raise
+        _close_serial()
+        ser = _get_serial()
+        try:
+            ser.write(data)
+            ser.flush()
+            return
+        except Exception:
+            _close_serial()
+            raise
+
+
 def _normalize_pattern(pat):
     pat = (pat or "000000") + "000000"
     out = []
@@ -77,8 +126,7 @@ def _normalize_pattern(pat):
 def _write_line(ser, text):
     # CRLF helps some USB stacks; Pico strips \r
     data = (text + "\r\n").encode("ascii")
-    ser.write(data)
-    ser.flush()
+    _write_bytes_with_reconnect(data)
 
 
 def _force_leds_off(ser):

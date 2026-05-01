@@ -1,8 +1,8 @@
 
 from PIL import Image
 
-DEFAULT_TARGET_WIDTH = 6
-DEFAULT_TARGET_HEIGHT = 3
+DEFAULT_TARGET_WIDTH = 16
+DEFAULT_TARGET_HEIGHT = 16
 DEFAULT_THRESHOLD = 128
 
 
@@ -14,6 +14,8 @@ def load_image(image_path):
 def resize_image(
     img, target_width=DEFAULT_TARGET_WIDTH, target_height=DEFAULT_TARGET_HEIGHT
 ):
+    if target_width is None or target_height is None:
+        return img
     resized_img = img.resize((target_width, target_height))
     return resized_img
 
@@ -226,11 +228,15 @@ def print_braille_rows(rows):
 
 def process_image(
     image_path,
-    target_width=DEFAULT_TARGET_WIDTH,
-    target_height=DEFAULT_TARGET_HEIGHT,
+    target_width=None,
+    target_height=None,
     threshold=DEFAULT_THRESHOLD,
 ):
     img = load_image(image_path)
+    if target_width is None:
+        target_width = img.size[0]
+    if target_height is None:
+        target_height = img.size[1]
     resized_img = resize_image(img, target_width, target_height)
     binary_img = binarize_image(resized_img, threshold)
 
@@ -268,8 +274,8 @@ def send_to_pico_placeholder(pico_data):
 def process_image_for_flask(file_path, threshold=DEFAULT_THRESHOLD):
     result = process_image(
         image_path=file_path,
-        target_width=DEFAULT_TARGET_WIDTH,
-        target_height=DEFAULT_TARGET_HEIGHT,
+        target_width=None,
+        target_height=None,
         threshold=threshold,
     )
 

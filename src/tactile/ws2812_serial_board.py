@@ -10,7 +10,7 @@ import base64
 import os
 import time
 
-from tactile.serial_board import _get_serial, _lock
+from tactile.serial_board import _lock, _write_bytes_with_reconnect
 
 
 def send_ws2812_frame(rgb_bytes):
@@ -19,10 +19,8 @@ def send_ws2812_frame(rgb_bytes):
         raise ValueError("RGB buffer length must be multiple of 3")
     b64 = base64.b64encode(rgb_bytes).decode("ascii")
     with _lock:
-        ser = _get_serial()
         line = "WS2812\n" + b64 + "\n"
-        ser.write(line.encode("ascii"))
-        ser.flush()
+        _write_bytes_with_reconnect(line.encode("ascii"))
         # Let the Pico finish decoding and driving the strip before the next command.
         time.sleep(float(os.environ.get("WS2812_POST_WRITE_DELAY_SEC", "0.06")))
         if os.environ.get("SERIAL_DEBUG", "").lower() in ("1", "true", "yes"):

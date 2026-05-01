@@ -11,7 +11,12 @@ from werkzeug.utils import secure_filename
 
 from tactile.braille import translate_text
 from tactile.image_pipeline import process_image_for_flask
-from tactile.ws2812_matrix import buffer_to_preview_grid, render_braille_rgb_buffer
+from tactile.ws2812_matrix import (
+    buffer_to_preview_grid,
+    panel_mapping_from_env,
+    panel_strip_index,
+    render_braille_rgb_buffer,
+)
 from tactile.serial_board import clear_board, reset_board
 from tactile.ws2812_serial_board import clear_ws2812_panel, send_ws2812_frame
 
@@ -20,6 +25,8 @@ WS2812_TEXT_COLS = 11
 WS2812_TEXT_ROWS = 2
 # LED + detailed preview: one page = this many typed characters from the input string (11×2).
 WS2812_CHARS_PER_PAGE = 22
+WS2812_IMAGE_PANEL_WIDTH = 16
+WS2812_IMAGE_PANEL_HEIGHT = 16
 
 # Same as legacy flat layout: uploads live under the process cwd, not the package path.
 UPLOAD_FOLDER = "uploads"
@@ -75,6 +82,43 @@ def _ws2812_character_page(text: str, page: int, chunk: int = WS2812_CHARS_PER_P
         "page_text": fragment,
         "page_lines": fragment.splitlines() or ([fragment] if fragment else [""]),
     }
+
+
+def _image_matrix_to_ws2812_rgb(
+    rows: list[list[int]],
+    width: int,
+    height: int,
+    fg: tuple[int, int, int] = (255, 255, 255),
+    bg: tuple[int, int, int] = (0, 0, 0),
+) -> bytes:
+    """
+    Convert a logical 0/1 image matrix into a WS2812 RGB frame using
+    the same strip mapping options used by text rendering.
+    """
+    total_leds = width * height
+    frame = bytearray(total_leds * 3)
+    mapping = panel_mapping_from_env()
+    try:
+        brightness = float(os.environ.get("WS2812_BRIGHTNESS", "0.10"))
+    except (TypeError, ValueError):
+        brightness = 0.10
+    brightness = max(0.0, min(1.0, brightness))
+    lit_fg = tuple(min(255, max(0, int(round(c * brightness)))) for c in fg)
+
+    for py in range(height):
+        source_row = rows[py] if py < len(rows) and isinstance(rows[py], list) else []
+        for px in range(width):
+            value = 1 if (px < len(source_row) and source_row[px] == 1) else 0
+            color = lit_fg if value else bg
+            idx = panel_strip_index(px, py, width, height, mapping)
+            if idx is None:
+                continue
+            offset = idx * 3
+            frame[offset] = color[0]
+            frame[offset + 1] = color[1]
+            frame[offset + 2] = color[2]
+
+    return bytes(frame)
 
 
 @app.route("/")
@@ -168,9 +212,7 @@ def uploaded_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 
-@app.route("/upload_image", methods=["POST"])
-@app.route("/image-display", methods=["POST"])
-def upload_image():
+def _handle_image_upload(send_to_led: bool):
     if "image" not in request.files:
         return jsonify({"status": "error", "message": "No image file found."}), 400
 
@@ -189,6 +231,36 @@ def upload_image():
 
     try:
         result = process_image_for_flask(save_path)
+        if send_to_led:
+            panel_width = int(
+                os.environ.get("WS2812_IMAGE_WIDTH", str(WS2812_IMAGE_PANEL_WIDTH))
+            )
+            panel_height = int(
+                os.environ.get("WS2812_IMAGE_HEIGHT", str(WS2812_IMAGE_PANEL_HEIGHT))
+            )
+            image_width = int(result.get("target_width") or 0)
+            image_height = int(result.get("target_height") or 0)
+            if image_width > panel_width or image_height > panel_height:
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": (
+                                f"Image is {image_width}x{image_height}, but LED panel is "
+                                f"{panel_width}x{panel_height}. Use a smaller image."
+                            ),
+                            "target_width": result.get("target_width"),
+                            "target_height": result.get("target_height"),
+                        }
+                    ),
+                    400,
+                )
+            rgb_frame = _image_matrix_to_ws2812_rgb(
+                result.get("rows", []),
+                panel_width,
+                panel_height,
+            )
+            send_ws2812_frame(rgb_frame)
 
         image_url = url_for("uploaded_file", filename=unique_filename)
 
@@ -211,6 +283,22 @@ def upload_image():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/upload_image", methods=["POST"])
+@app.route("/image-display", methods=["POST"])
+def upload_image():
+    send_to_led = request.form.get("send_to_led", "1").lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+    return _handle_image_upload(send_to_led=send_to_led)
+
+
+@app.route("/upload_image_simulation", methods=["POST"])
+def upload_image_simulation():
+    return _handle_image_upload(send_to_led=False)
 
 
 @app.route("/reset", methods=["POST"])
