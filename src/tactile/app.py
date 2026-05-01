@@ -9,6 +9,12 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 
+from tactile.board_transport import (
+    clear_board,
+    clear_ws2812_panel,
+    reset_board,
+    send_ws2812_frame,
+)
 from tactile.braille import translate_text
 from tactile.image_pipeline import process_image_for_flask
 from tactile.ws2812_matrix import (
@@ -17,8 +23,6 @@ from tactile.ws2812_matrix import (
     panel_strip_index,
     render_braille_rgb_buffer,
 )
-from tactile.serial_board import clear_board, reset_board
-from tactile.ws2812_serial_board import clear_ws2812_panel, send_ws2812_frame
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 WS2812_TEXT_COLS = 11
@@ -344,6 +348,19 @@ def clear_panel():
     return jsonify({"status": "cleared"})
 
 
+def run_server():
+    """
+    Run Flask using environment variables so a Raspberry Pi host can expose
+    this service to the local network.
+    """
+    host = os.environ.get("TACTILE_HOST", "0.0.0.0")
+    port = int(os.environ.get("TACTILE_PORT", "5000"))
+    debug = os.environ.get("TACTILE_DEBUG", "1").lower() in ("1", "true", "yes")
+    use_reloader = (
+        os.environ.get("TACTILE_USE_RELOADER", "0").lower() in ("1", "true", "yes")
+    )
+    app.run(host=host, port=port, debug=debug, use_reloader=use_reloader)
+
+
 if __name__ == "__main__":
-    # use_reloader=False avoids two processes fighting over the USB serial port
-    app.run(debug=True, use_reloader=False)
+    run_server()

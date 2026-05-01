@@ -1,0 +1,17 @@
+[Unit]
+Description=Tactile Flask server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/tactile
+EnvironmentFile=/home/pi/tactile/deploy/tactile.env
+ExecStart=/home/pi/tactile/.venv/bin/python /home/pi/tactile/app.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
